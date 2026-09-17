@@ -14,22 +14,22 @@
     --bg-a:#05060a; --bg-b:#0d1220; --bg-c:#1a2440;
     --key-num:#1c1d22; --key-num-text:#f2f2f2;
     --key-fn:#262830; --key-fn-text:#d6d6da;
-    --accent:#f2a33d; --accent-text:#1a1206;
+    --accent:#3E7BFA; --accent-b:#1D4ED8; --accent-text:#ffffff;
     --ink:#ffffff; --ink-dim:rgba(255,255,255,0.42);
     --badge-bg:rgba(255,255,255,0.08); --badge-text:rgba(255,255,255,0.65);
     --panel:rgba(255,255,255,0.06); --panel-border:rgba(255,255,255,0.1);
-    --seg-active-text:#1a1206;
+    --seg-active-text:#ffffff;
     --key-sheen:rgba(255,255,255,0.10);
   }
   [data-theme="light"]{
     --bg-a:#eef0f4; --bg-b:#e4e7ee; --bg-c:#dfe6f5;
     --key-num:#ffffff; --key-num-text:#1a1a1a;
     --key-fn:#e7e9ee; --key-fn-text:#4a4a4a;
-    --accent:#f2a33d; --accent-text:#1a1206;
+    --accent:#3E7BFA; --accent-b:#1D4ED8; --accent-text:#ffffff;
     --ink:#161616; --ink-dim:rgba(0,0,0,0.4);
     --badge-bg:rgba(0,0,0,0.06); --badge-text:rgba(0,0,0,0.55);
     --panel:rgba(0,0,0,0.04); --panel-border:rgba(0,0,0,0.08);
-    --seg-active-text:#1a1206;
+    --seg-active-text:#ffffff;
     --key-sheen:rgba(255,255,255,0.55);
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
@@ -62,15 +62,23 @@
   .display{ position:relative; padding:8px 6px 18px; flex:0 0 auto;
     display:flex; flex-direction:column; justify-content:flex-end;
   }
-  .mic-badge{ position:absolute; top:0; left:0; width:36px; height:28px; border-radius:11px;
-    background:var(--badge-bg); border:none;
-    display:flex; align-items:center; justify-content:center; color:var(--badge-text);
+  .mic-fab{
+    position:fixed; width:60px; height:60px; border-radius:50%;
+    background:linear-gradient(165deg, rgba(255,255,255,0.35), transparent 55%), var(--accent);
+    color:var(--accent-text); border:none;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 8px 20px rgba(37,99,235,0.45), inset 0 1px 0 rgba(255,255,255,0.3);
+    z-index:40; touch-action:none;
+    opacity:1; transition:opacity 0.5s ease, transform 0.15s ease;
   }
-  .mic-badge svg{ width:15px; height:15px; }
-  .mic-badge.listening{ color:var(--accent); animation:pulse 1s infinite ease-in-out; }
+  .mic-fab svg{ width:24px; height:24px; }
+  .mic-fab:active{ transform:scale(0.94); }
+  .mic-fab.dragging{ transition:none; }
+  .mic-fab.idle{ opacity:0.4; }
+  .mic-fab.listening{ opacity:1; animation:pulse 1s infinite ease-in-out; }
   @keyframes pulse{
-    0%,100%{ box-shadow:0 0 0 0 rgba(242,163,61,0.45); }
-    50%{ box-shadow:0 0 0 7px rgba(242,163,61,0); }
+    0%,100%{ box-shadow:0 0 0 0 rgba(37,99,235,0.55), 0 8px 20px rgba(37,99,235,0.45); }
+    50%{ box-shadow:0 0 0 12px rgba(37,99,235,0), 0 8px 20px rgba(37,99,235,0.45); }
   }
   .angle-chip{ position:absolute; top:0; right:0; padding:0 10px; height:24px; border-radius:11px;
     background:var(--badge-bg); border:none;
@@ -95,6 +103,7 @@
     margin-bottom:10px; flex:0 0 auto; min-height:150px; }
   .sci-rows.hidden{ display:none; }
   .grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; flex:1; min-height:0; }
+  .grid.hidden{ display:none; }
   .key{ appearance:none; border:none; cursor:pointer; border-radius:20px;
     font-size:clamp(17px, 4.8vw, 22px); font-weight:500; color:var(--key-num-text);
     background:linear-gradient(165deg, var(--key-sheen), transparent 55%), var(--key-num);
@@ -111,10 +120,10 @@
     color:var(--key-fn-text); }
   .key.op{ background:linear-gradient(165deg, rgba(255,255,255,0.35), transparent 55%), var(--accent);
     color:var(--accent-text); font-weight:700; font-size:clamp(20px, 5.8vw, 26px);
-    box-shadow:0 4px 12px rgba(242,163,61,0.35), inset 0 1px 0 rgba(255,255,255,0.3); }
+    box-shadow:0 4px 12px rgba(37,99,235,0.35), inset 0 1px 0 rgba(255,255,255,0.3); }
   .key.eq{ background:linear-gradient(165deg, rgba(255,255,255,0.35), transparent 55%), var(--accent);
     color:var(--accent-text); font-weight:700; font-size:clamp(20px, 6vw, 27px);
-    box-shadow:0 6px 16px rgba(242,163,61,0.4), inset 0 1px 0 rgba(255,255,255,0.3); }
+    box-shadow:0 6px 16px rgba(37,99,235,0.4), inset 0 1px 0 rgba(255,255,255,0.3); }
   .key.wide{ grid-column:span 2; }
   .toast{ position:fixed; left:50%; bottom:26px; transform:translateX(-50%);
     background:rgba(30,32,38,0.95); color:#fff; padding:9px 18px; border-radius:20px;
@@ -153,6 +162,40 @@
   }
   .history-item .h-expr{ color:var(--ink-dim); font-size:12.5px; }
   .history-item .h-result{ color:var(--ink); font-size:19px; font-weight:600; }
+
+  .conv-panel{ display:flex; flex-direction:column; gap:14px; flex:1; min-height:0; padding-top:6px; }
+  .conv-panel.hidden{ display:none; }
+  .conv-categories{
+    display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; flex:0 0 auto;
+    scrollbar-width:none;
+  }
+  .conv-categories::-webkit-scrollbar{ display:none; }
+  .conv-chip{
+    appearance:none; border:none; cursor:pointer; flex:0 0 auto;
+    background:var(--panel); border:1px solid var(--panel-border); color:var(--ink-dim);
+    padding:9px 16px; border-radius:999px; font-size:13px; font-weight:600;
+  }
+  .conv-chip.active{ background:var(--accent); color:var(--accent-text); border-color:transparent; }
+  .conv-row{ display:flex; gap:10px; align-items:center; flex:0 0 auto; }
+  .conv-input, .conv-result{
+    flex:1; min-width:0;
+    font-family:"SFMono-Regular",Consolas,monospace; font-size:clamp(20px,6vw,28px); font-weight:600;
+    color:var(--ink); background:var(--panel); border:1px solid var(--panel-border);
+    border-radius:16px; padding:14px 16px; text-align:right;
+  }
+  .conv-result{ color:var(--accent); }
+  .conv-select{
+    flex:0 0 auto; max-width:38%;
+    font-family:inherit; font-size:14px; font-weight:600; color:var(--ink);
+    background:var(--panel); border:1px solid var(--panel-border);
+    border-radius:16px; padding:14px 10px;
+  }
+  .conv-swap{
+    align-self:center; width:42px; height:42px; border-radius:50%;
+    background:var(--panel); border:1px solid var(--panel-border); color:var(--accent);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .conv-swap svg{ width:19px; height:19px; }
 </style>
 </head>
 <body>
@@ -173,6 +216,7 @@
     <div class="segmented">
       <button class="seg active" id="stdModeBtn">STD</button>
       <button class="seg" id="sciModeBtn">SCI</button>
+      <button class="seg" id="convModeBtn">CONV</button>
     </div>
     <button class="icon-btn" id="historyBtn" aria-label="History" style="justify-self:end;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -184,13 +228,6 @@
 
   <div class="calc">
     <div class="display">
-      <button class="mic-badge" id="micBtn" aria-label="Voice input">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"></path>
-          <path d="M19 11a7 7 0 0 1-14 0"></path>
-          <line x1="12" y1="19" x2="12" y2="22"></line>
-        </svg>
-      </button>
       <button class="angle-chip" id="angleBtn">DEG</button>
       <div class="history-line" id="historyLine">&nbsp;</div>
       <div class="current" id="current" contenteditable="true" inputmode="none" spellcheck="false" autocorrect="off" autocapitalize="off"></div>
@@ -241,6 +278,24 @@
       <button class="key" data-num="0">0</button>
       <button class="key eq wide" data-act="equals">=</button>
     </div>
+
+    <div class="conv-panel hidden" id="convPanel">
+      <div class="conv-categories" id="convCategories"></div>
+      <div class="conv-row">
+        <input type="text" inputmode="decimal" class="conv-input" id="convFromInput" value="1">
+        <select class="conv-select" id="convFromUnit"></select>
+      </div>
+      <button class="conv-swap" id="convSwapBtn" aria-label="Swap units">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+          <polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+        </svg>
+      </button>
+      <div class="conv-row">
+        <div class="conv-result" id="convResult">1</div>
+        <select class="conv-select" id="convToUnit"></select>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -256,6 +311,14 @@
     <div class="history-list" id="historyList"></div>
   </div>
 </div>
+
+<button class="mic-fab" id="micBtn" aria-label="Voice input">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"></path>
+    <path d="M19 11a7 7 0 0 1-14 0"></path>
+    <line x1="12" y1="19" x2="12" y2="22"></line>
+  </svg>
+</button>
 
 <div class="toast" id="toast"></div>
 
@@ -313,6 +376,93 @@ const sciRows = document.getElementById("sciRows");
 const stdModeBtn = document.getElementById("stdModeBtn");
 const sciModeBtn = document.getElementById("sciModeBtn");
 const micBtn = document.getElementById("micBtn");
+
+// --- Mic FAB: draggable, remembers where you put it, dims when idle ---
+(function setupMicFab(){
+  const SAVE_KEY = "fx-calc-mic-pos";
+  const HINT_KEY = "fx-calc-mic-hint-count";
+
+  function placeDefault(){
+    // Starts up near the display, NOT over the +/= keys, per feedback
+    // that the old bottom-right spot blocked the plus button.
+    const rect = { top: 130, left: window.innerWidth - 76 };
+    micBtn.style.top = rect.top + "px";
+    micBtn.style.left = rect.left + "px";
+  }
+
+  let saved = null;
+  try{ saved = JSON.parse(localStorage.getItem(SAVE_KEY)); }catch(e){}
+  if (saved && typeof saved.top === "number" && typeof saved.left === "number"){
+    micBtn.style.top = saved.top + "px";
+    micBtn.style.left = saved.left + "px";
+  } else {
+    placeDefault();
+  }
+
+  function clamp(pos){
+    const size = 60;
+    const maxLeft = window.innerWidth - size - 4;
+    const maxTop = window.innerHeight - size - 4;
+    return {
+      left: Math.min(Math.max(4, pos.left), maxLeft),
+      top: Math.min(Math.max(4, pos.top), maxTop)
+    };
+  }
+
+  let dragging = false, moved = false, startX, startY, startLeft, startTop;
+
+  micBtn.addEventListener("pointerdown", (e)=>{
+    dragging = true; moved = false;
+    startX = e.clientX; startY = e.clientY;
+    const r = micBtn.getBoundingClientRect();
+    startLeft = r.left; startTop = r.top;
+    micBtn.classList.add("dragging");
+    micBtn.setPointerCapture(e.pointerId);
+    resetIdleTimer();
+  });
+
+  micBtn.addEventListener("pointermove", (e)=>{
+    if (!dragging) return;
+    const dx = e.clientX - startX, dy = e.clientY - startY;
+    if (Math.abs(dx) > 6 || Math.abs(dy) > 6) moved = true;
+    if (!moved) return;
+    const pos = clamp({ left: startLeft + dx, top: startTop + dy });
+    micBtn.style.left = pos.left + "px";
+    micBtn.style.top = pos.top + "px";
+  });
+
+  micBtn.addEventListener("pointerup", (e)=>{
+    dragging = false;
+    micBtn.classList.remove("dragging");
+    if (moved){
+      const pos = clamp({ left: parseFloat(micBtn.style.left), top: parseFloat(micBtn.style.top) });
+      try{ localStorage.setItem(SAVE_KEY, JSON.stringify(pos)); }catch(e){}
+    }
+    resetIdleTimer();
+  });
+
+  // Idle dimming: fades after a few seconds of no interaction, and
+  // brightens instantly the moment you touch or use it.
+  let idleTimer = null;
+  function resetIdleTimer(){
+    micBtn.classList.remove("idle");
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(()=> micBtn.classList.add("idle"), 4000);
+  }
+  resetIdleTimer();
+
+  // One-time-ish hint for the first few uses so people discover the drag.
+  let hintCount = 0;
+  try{ hintCount = parseInt(localStorage.getItem(HINT_KEY) || "0", 10); }catch(e){}
+  if (hintCount < 3){
+    setTimeout(()=> toast("Tip: press and hold the mic, then drag it anywhere"), 900);
+    try{ localStorage.setItem(HINT_KEY, String(hintCount + 1)); }catch(e){}
+  }
+
+  // Expose so the click handler below can ignore taps that were actually drags.
+  window.__micWasDragged = () => moved;
+})();
+
 const historyBtn = document.getElementById("historyBtn");
 const historyOverlay = document.getElementById("historyOverlay");
 const historyList = document.getElementById("historyList");
@@ -656,17 +806,162 @@ document.querySelectorAll("[data-op]").forEach(btn=>{
   });
 });
 
+const gridEl = document.querySelector(".grid");
+const convPanel = document.getElementById("convPanel");
+const convModeBtn = document.getElementById("convModeBtn");
+
+function showStdSciUI(){
+  gridEl.classList.remove("hidden");
+  convPanel.classList.add("hidden");
+}
+function showConvUI(){
+  gridEl.classList.add("hidden");
+  sciRows.classList.add("hidden");
+  convPanel.classList.remove("hidden");
+}
+
 stdModeBtn.addEventListener("click", ()=>{
   sciRows.classList.add("hidden");
+  showStdSciUI();
   stdModeBtn.classList.add("active");
   sciModeBtn.classList.remove("active");
+  convModeBtn.classList.remove("active");
 });
 
 sciModeBtn.addEventListener("click", ()=>{
   sciRows.classList.remove("hidden");
+  showStdSciUI();
   sciModeBtn.classList.add("active");
   stdModeBtn.classList.remove("active");
+  convModeBtn.classList.remove("active");
 });
+
+convModeBtn.addEventListener("click", ()=>{
+  showConvUI();
+  convModeBtn.classList.add("active");
+  stdModeBtn.classList.remove("active");
+  sciModeBtn.classList.remove("active");
+});
+
+// --- Unit converter: pure offline math only. Currency/Finance/Date/Discount
+// are deliberately NOT here — those need live external data, which is a
+// different kind of feature than a fixed conversion factor table.
+const CONV_CATEGORIES = {
+  Length: { base:"m", units:{
+    m:1, km:1000, cm:0.01, mm:0.001, mi:1609.344, yd:0.9144, ft:0.3048, in:0.0254
+  }},
+  Mass: { base:"kg", units:{
+    kg:1, g:0.001, mg:0.000001, t:1000, lb:0.45359237, oz:0.0283495231
+  }},
+  Area: { base:"m\u00b2", units:{
+    "m\u00b2":1, "km\u00b2":1000000, "cm\u00b2":0.0001, "ft\u00b2":0.09290304,
+    "yd\u00b2":0.83612736, acre:4046.8564224, hectare:10000
+  }},
+  Volume: { base:"L", units:{
+    L:1, mL:0.001, "m\u00b3":1000, gal:3.785411784, qt:0.946352946,
+    pt:0.473176473, cup:0.2365882365, "fl oz":0.0295735295625
+  }},
+  Time: { base:"s", units:{
+    ms:0.001, s:1, min:60, hr:3600, day:86400, week:604800
+  }},
+  Speed: { base:"m/s", units:{
+    "m/s":1, "km/h":0.2777778, mph:0.44704, knot:0.5144444, "ft/s":0.3048
+  }},
+  Data: { base:"byte", units:{
+    bit:0.125, byte:1, KB:1024, MB:1048576, GB:1073741824, TB:1099511627776
+  }},
+  Temperature: { special:"temperature", units:{ "\u00b0C":"c", "\u00b0F":"f", K:"k" } },
+  "Numeral System": { special:"base", units:{ Binary:2, Octal:8, Decimal:10, Hex:16 } },
+};
+
+let convCategory = "Length";
+let convFromUnit = "m";
+let convToUnit = "ft";
+
+const convCategoriesEl = document.getElementById("convCategories");
+const convFromInput = document.getElementById("convFromInput");
+const convFromUnitEl = document.getElementById("convFromUnit");
+const convToUnitEl = document.getElementById("convToUnit");
+const convResultEl = document.getElementById("convResult");
+const convSwapBtn = document.getElementById("convSwapBtn");
+
+function renderConvCategories(){
+  convCategoriesEl.innerHTML = "";
+  Object.keys(CONV_CATEGORIES).forEach(cat=>{
+    const chip = document.createElement("button");
+    chip.className = "conv-chip" + (cat === convCategory ? " active" : "");
+    chip.textContent = cat;
+    chip.addEventListener("click", ()=>{
+      convCategory = cat;
+      const units = Object.keys(CONV_CATEGORIES[cat].units);
+      convFromUnit = units[0];
+      convToUnit = units[1] || units[0];
+      renderConvCategories();
+      renderConvUnitSelects();
+      runConversion();
+    });
+    convCategoriesEl.appendChild(chip);
+  });
+}
+
+function renderConvUnitSelects(){
+  const units = Object.keys(CONV_CATEGORIES[convCategory].units);
+  convFromUnitEl.innerHTML = units.map(u => `<option value="${u}"${u===convFromUnit?" selected":""}>${u}</option>`).join("");
+  convToUnitEl.innerHTML = units.map(u => `<option value="${u}"${u===convToUnit?" selected":""}>${u}</option>`).join("");
+}
+
+function convertValue(value, category, fromUnit, toUnit){
+  const cat = CONV_CATEGORIES[category];
+  if (cat.special === "temperature"){
+    const f = cat.units[fromUnit], t = cat.units[toUnit];
+    let c;
+    if (f === "c") c = value;
+    else if (f === "f") c = (value - 32) * 5/9;
+    else c = value - 273.15;
+    if (t === "c") return c;
+    if (t === "f") return c * 9/5 + 32;
+    return c + 273.15;
+  }
+  if (cat.special === "base"){
+    const fromBase = cat.units[fromUnit], toBase = cat.units[toUnit];
+    const intVal = parseInt(String(value).trim(), fromBase);
+    if (isNaN(intVal)) throw new Error("bad value for that base");
+    return intVal.toString(toBase).toUpperCase();
+  }
+  const factorFrom = cat.units[fromUnit], factorTo = cat.units[toUnit];
+  return (value * factorFrom) / factorTo;
+}
+
+function runConversion(){
+  const raw = convFromInput.value.trim();
+  try{
+    const cat = CONV_CATEGORIES[convCategory];
+    const inputVal = cat.special === "base" ? raw : parseFloat(raw);
+    if (cat.special !== "base" && (raw === "" || isNaN(inputVal))){
+      convResultEl.textContent = "\u2014";
+      return;
+    }
+    const result = convertValue(inputVal, convCategory, convFromUnit, convToUnit);
+    convResultEl.textContent = typeof result === "number"
+      ? (Math.round(result * 1e8) / 1e8).toString()
+      : result;
+  } catch(e){
+    convResultEl.textContent = "\u2014";
+  }
+}
+
+convFromInput.addEventListener("input", runConversion);
+convFromUnitEl.addEventListener("change", ()=>{ convFromUnit = convFromUnitEl.value; runConversion(); });
+convToUnitEl.addEventListener("change", ()=>{ convToUnit = convToUnitEl.value; runConversion(); });
+convSwapBtn.addEventListener("click", ()=>{
+  [convFromUnit, convToUnit] = [convToUnit, convFromUnit];
+  renderConvUnitSelects();
+  runConversion();
+});
+
+renderConvCategories();
+renderConvUnitSelects();
+runConversion();
 
 angleBtn.addEventListener("click", ()=>{
   angleMode = angleMode === "deg" ? "rad" : angleMode === "rad" ? "grad" : "deg";
@@ -843,6 +1138,8 @@ if (SpeechRec){
       return;
     }
 
+    if (handleVoiceCommand(transcript)) return;
+
     const parsed = parseSpokenMath(transcript);
     if (parsed === null){
       toast('Heard: "' + transcript + '" \u2014 could not turn that into a calculation');
@@ -855,11 +1152,125 @@ if (SpeechRec){
   };
 
   micBtn.addEventListener("click", ()=>{
+    if (window.__micWasDragged && window.__micWasDragged()) return;
     if (recognizing){ recognizer.stop(); return; }
     try{ recognizer.start(); } catch(e){}
   });
 } else {
-  micBtn.addEventListener("click", ()=>{ toast("Voice input not supported in this browser"); });
+  micBtn.addEventListener("click", ()=>{
+    if (window.__micWasDragged && window.__micWasDragged()) return;
+    toast("Voice input not supported in this browser");
+  });
+}
+
+// Voice commands for controlling the app itself, not just dictating math.
+// Checked before math parsing so "clear everything" doesn't get treated
+// as a failed calculation.
+function handleVoiceCommand(text){
+  const t = text.trim().toLowerCase();
+
+  if (/\b(clear everything|clear the screen|clear screen|clear all|reset everything|^clear$)\b/.test(t)){
+    document.querySelector('[data-act="clear"]').click();
+    toast("Cleared");
+    return true;
+  }
+  if (/\b(delete|backspace|remove last)\b/.test(t)){
+    document.querySelector('[data-act="back"]').click();
+    return true;
+  }
+  if (/\b(light mode|switch to light|turn on light mode)\b/.test(t)){
+    if (currentTheme !== "light"){ currentTheme = "light"; applyTheme("light"); try{ localStorage.setItem("fx-calc-theme","light"); }catch(e){} }
+    toast("Light mode");
+    return true;
+  }
+  if (/\b(dark mode|switch to dark|turn on dark mode)\b/.test(t)){
+    if (currentTheme !== "dark"){ currentTheme = "dark"; applyTheme("dark"); try{ localStorage.setItem("fx-calc-theme","dark"); }catch(e){} }
+    toast("Dark mode");
+    return true;
+  }
+  if (/\b(scientific mode|switch to scientific|switch to science|engineering mode|switch to engineering)\b/.test(t)){
+    sciModeBtn.click();
+    toast("Scientific mode");
+    return true;
+  }
+  if (/\b(basic mode|standard mode|switch to basic|switch to standard)\b/.test(t)){
+    stdModeBtn.click();
+    toast("Standard mode");
+    return true;
+  }
+  if (/\b(open history|show history|view history)\b/.test(t)){
+    openHistory();
+    return true;
+  }
+  if (/\b(close history|hide history)\b/.test(t)){
+    closeHistory();
+    return true;
+  }
+  if (/\bconvert to fraction\b|\bshow (as )?a? ?fraction\b/.test(t)){
+    if (lastResult === null){ toast("Calculate something first"); return true; }
+    currentEl.textContent = decimalToFraction(lastResult);
+    showingFraction = true;
+    toast("Fraction");
+    return true;
+  }
+  if (/\bconvert to decimal\b|\bshow (as )?a? ?decimal\b/.test(t)){
+    if (lastResult === null){ toast("Calculate something first"); return true; }
+    updateDisplay();
+    showingFraction = false;
+    toast("Decimal");
+    return true;
+  }
+
+  // "convert 20 feet to meters" style unit conversion
+  const convMatch = t.match(/convert\s+([\d.]+)\s*([a-z\u00b0\/]+)\s+to\s+([a-z\u00b0\/]+)/i);
+  if (convMatch){
+    const UNIT_ALIASES = {
+      meter:"m", meters:"m", metre:"m", metres:"m",
+      kilometer:"km", kilometers:"km", centimeter:"cm", centimeters:"cm",
+      millimeter:"mm", millimeters:"mm", mile:"mi", miles:"mi",
+      yard:"yd", yards:"yd", foot:"ft", feet:"ft", inch:"in", inches:"in",
+      kilogram:"kg", kilograms:"kg", gram:"g", grams:"g", milligram:"mg", milligrams:"mg",
+      tonne:"t", tonnes:"t", pound:"lb", pounds:"lb", ounce:"oz", ounces:"oz",
+      liter:"L", liters:"L", litre:"L", litres:"L", milliliter:"mL", milliliters:"mL",
+      gallon:"gal", gallons:"gal", quart:"qt", quarts:"qt", pint:"pt", pints:"pt",
+      second:"s", seconds:"s", minute:"min", minutes:"min", hour:"hr", hours:"hr",
+      day:"day", days:"day", week:"week", weeks:"week",
+      byte:"byte", bytes:"byte", kilobyte:"KB", kilobytes:"KB",
+      megabyte:"MB", megabytes:"MB", gigabyte:"GB", gigabytes:"GB", terabyte:"TB", terabytes:"TB",
+      celsius:"\u00b0C", fahrenheit:"\u00b0F", kelvin:"K",
+      "m/s":"m/s", "km/h":"km/h", mph:"mph", knot:"knot", knots:"knot"
+    };
+    const normalize = (u) => {
+      const key = u.toLowerCase().trim();
+      return UNIT_ALIASES[key] || u;
+    };
+    const value = convMatch[1];
+    const fromU = normalize(convMatch[2]);
+    const toU = normalize(convMatch[3]);
+
+    const category = Object.keys(CONV_CATEGORIES).find(cat=>{
+      const units = Object.keys(CONV_CATEGORIES[cat].units);
+      return units.includes(fromU) && units.includes(toU);
+    });
+
+    if (!category){
+      toast("Don't recognize those units yet");
+      return true;
+    }
+
+    convCategory = category;
+    convFromUnit = fromU;
+    convToUnit = toU;
+    convModeBtn.click();
+    renderConvCategories();
+    renderConvUnitSelects();
+    convFromInput.value = value;
+    runConversion();
+    toast(value + " " + fromU + " = " + convResultEl.textContent + " " + toU);
+    return true;
+  }
+
+  return false;
 }
 
 function parseSpokenMath(text){
@@ -872,28 +1283,39 @@ function parseSpokenMath(text){
        .replace(/\bto the power of\b|\braise(d)? to (the )?power( of)?\b|\bpower of\b/g, " ^ ")
        .replace(/\bpoint\b/g, " . ")
        .replace(/\bpercent\b/g, " /100 ")
-       .replace(/\bsquare root of\b/g, " \u221a( ")
-       .replace(/\bsine of\b/g, " sin( ")
-       .replace(/\bcosine of\b/g, " cos( ")
-       .replace(/\btangent of\b/g, " tan( ")
-       .replace(/\blog of\b/g, " log( ")
+       // These now match WITH or WITHOUT "of" — "log 50" and "log of 50"
+       // both work, since real speech often drops the "of".
+       .replace(/\bsquare\s*root(\s+of)?\b/g, " \u221a( ")
+       .replace(/\bsine?(\s+of)?\b/g, " sin( ")
+       .replace(/\bcos(ine)?(\s+of)?\b/g, " cos( ")
+       .replace(/\btan(gent)?(\s+of)?\b/g, " tan( ")
+       .replace(/\bln(\s+of)?\b/g, " ln( ")
+       .replace(/\blog(\s+of)?\b/g, " log( ")
        .replace(/\bequals\b|\bequal\b|\bwhat is\b|\bwhat's\b/g, " ");
 
-  // Combine compound number words ("eighty one" -> 81, "one hundred" -> 100)
-  // properly, instead of converting each word separately and concatenating
-  // the digit strings (which turned "eighty one" into "801").
+  // Combine compound number words ("eighty one" -> 81, "one hundred" -> 100,
+  // "one million" -> 1000000) properly, instead of converting each word
+  // separately and concatenating the digit strings. Also handles the
+  // common case where speech-to-text already writes part of the number as
+  // digits (e.g. "5 million" arriving as the literal token "5").
   const NUMBER_WORDS = {
     zero:0, one:1, two:2, three:3, four:4, five:5, six:6, seven:7, eight:8, nine:9,
     ten:10, eleven:11, twelve:12, thirteen:13, fourteen:14, fifteen:15, sixteen:16,
     seventeen:17, eighteen:18, nineteen:19,
     twenty:20, thirty:30, forty:40, fifty:50, sixty:60, seventy:70, eighty:80, ninety:90
   };
+  const SCALE_WORDS = { hundred:100, thousand:1000, million:1000000, billion:1000000000 };
   function wordsToNumber(words){
     let total = 0, current = 0;
     for (const w of words){
       if (w === "and") continue;
+      if (/^\d+$/.test(w)){ current += parseInt(w, 10); continue; }
       if (w === "hundred"){ current = (current === 0 ? 1 : current) * 100; continue; }
-      if (w === "thousand"){ total += (current === 0 ? 1 : current) * 1000; current = 0; continue; }
+      if (w in SCALE_WORDS && w !== "hundred"){
+        total += (current === 0 ? 1 : current) * SCALE_WORDS[w];
+        current = 0;
+        continue;
+      }
       const val = NUMBER_WORDS[w];
       if (val !== undefined) current += val;
     }
@@ -901,7 +1323,7 @@ function parseSpokenMath(text){
   }
 
   const tokens = t.split(/\s+/).filter(Boolean);
-  const isNumberWord = (w) => w in NUMBER_WORDS || w === "hundred" || w === "thousand" || w === "and";
+  const isNumberWord = (w) => w in NUMBER_WORDS || w in SCALE_WORDS || w === "and" || /^\d+$/.test(w);
   const out = [];
   let run = [];
   for (const tok of tokens){
