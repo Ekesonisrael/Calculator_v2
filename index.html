@@ -12,8 +12,9 @@
 <style>
   :root{
     --bg-a:#05060a; --bg-b:#0d1220; --bg-c:#1a2440;
-    --key-num:#1c1d22; --key-num-text:#f2f2f2;
-    --key-fn:#262830; --key-fn-text:#d6d6da;
+    --key-num:rgba(255,255,255,0.055); --key-num-text:#f4f4f6;
+    --key-fn:rgba(255,255,255,0.032); --key-fn-text:rgba(255,255,255,0.68);
+    --key-active:rgba(255,255,255,0.14); --key-eq:rgba(62,123,250,0.20);
     --accent:#3E7BFA; --accent-b:#1D4ED8; --accent-text:#ffffff;
     --ink:#ffffff; --ink-dim:rgba(255,255,255,0.42);
     --badge-bg:rgba(255,255,255,0.08); --badge-text:rgba(255,255,255,0.65);
@@ -23,8 +24,9 @@
   }
   [data-theme="light"]{
     --bg-a:#eef0f4; --bg-b:#e4e7ee; --bg-c:#dfe6f5;
-    --key-num:#ffffff; --key-num-text:#1a1a1a;
-    --key-fn:#e7e9ee; --key-fn-text:#4a4a4a;
+    --key-num:rgba(0,0,0,0.05); --key-num-text:#141414;
+    --key-fn:rgba(0,0,0,0.028); --key-fn-text:rgba(0,0,0,0.58);
+    --key-active:rgba(0,0,0,0.12); --key-eq:rgba(62,123,250,0.16);
     --accent:#3E7BFA; --accent-b:#1D4ED8; --accent-text:#ffffff;
     --ink:#161616; --ink-dim:rgba(0,0,0,0.4);
     --badge-bg:rgba(0,0,0,0.06); --badge-text:rgba(0,0,0,0.55);
@@ -99,31 +101,27 @@
   }
   .current::-webkit-scrollbar{ display:none; }
   .current:empty::before{ content:"0"; }
-  .sci-rows{ display:grid; grid-template-columns:repeat(5, 1fr); grid-auto-rows:1fr; gap:9px;
-    margin-bottom:10px; flex:0 0 auto; min-height:150px; }
+  .sci-rows{ display:grid; grid-template-columns:repeat(5, 1fr); grid-auto-rows:1fr; gap:8px;
+    margin-bottom:10px; flex:0 0 auto; min-height:178px; }
   .sci-rows.hidden{ display:none; }
   .grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; flex:1; min-height:0; }
   .grid.hidden{ display:none; }
-  .key{ appearance:none; border:none; cursor:pointer; border-radius:20px;
-    font-size:clamp(17px, 4.8vw, 22px); font-weight:500; color:var(--key-num-text);
-    background:linear-gradient(165deg, var(--key-sheen), transparent 55%), var(--key-num);
-    box-shadow:0 3px 8px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.16);
-    transition:transform 0.06s ease, filter 0.06s ease;
+  .key{ appearance:none; border:none; cursor:pointer; border-radius:18px;
+    font-size:clamp(16px, 4.2vw, 20px); font-weight:400; color:var(--key-num-text);
+    background:var(--key-num); box-shadow:none;
+    transition:background 0.12s ease, transform 0.06s ease;
     display:flex; align-items:center; justify-content:center; height:100%; width:100%; padding:2px;
   }
-  .key:active{ transform:scale(0.92); filter:brightness(1.15); }
+  .key:active{ transform:scale(0.96); background:var(--key-active); }
   .key:focus-visible, .icon-btn:focus-visible, .seg:focus-visible, .history-item:focus-visible{
     outline:2px solid var(--accent); outline-offset:2px;
   }
-  .sci-rows .key{ min-height:0; padding:4px; border-radius:16px; font-size:clamp(14px, 4vw, 17px); }
-  .key.fn{ background:linear-gradient(165deg, var(--key-sheen), transparent 55%), var(--key-fn);
-    color:var(--key-fn-text); }
-  .key.op{ background:linear-gradient(165deg, rgba(255,255,255,0.35), transparent 55%), var(--accent);
-    color:var(--accent-text); font-weight:700; font-size:clamp(20px, 5.8vw, 26px);
-    box-shadow:0 4px 12px rgba(37,99,235,0.35), inset 0 1px 0 rgba(255,255,255,0.3); }
-  .key.eq{ background:linear-gradient(165deg, rgba(255,255,255,0.35), transparent 55%), var(--accent);
-    color:var(--accent-text); font-weight:700; font-size:clamp(20px, 6vw, 27px);
-    box-shadow:0 6px 16px rgba(37,99,235,0.4), inset 0 1px 0 rgba(255,255,255,0.3); }
+  .sci-rows .key{ min-height:0; padding:4px; border-radius:14px; font-size:clamp(13px, 3.6vw, 16px); }
+  .key.fn{ background:var(--key-fn); color:var(--key-fn-text); }
+  .key.op{ background:var(--key-fn); color:var(--accent);
+    font-weight:500; font-size:clamp(18px, 5vw, 23px); box-shadow:none; }
+  .key.eq{ background:var(--key-eq); color:var(--accent);
+    font-weight:600; font-size:clamp(19px, 5.4vw, 24px); box-shadow:none; }
   .key.wide{ grid-column:span 2; }
   .toast{ position:fixed; left:50%; bottom:26px; transform:translateX(-50%);
     background:rgba(30,32,38,0.95); color:#fff; padding:9px 18px; border-radius:20px;
@@ -211,6 +209,16 @@
     display:flex; align-items:center; justify-content:center;
   }
   .conv-swap svg{ width:19px; height:19px; }
+  .conv-body{ display:flex; flex-direction:column; gap:12px; overflow-y:auto; }
+  .conv-body.hidden{ display:none; }
+  .conv-label{ font-size:11.5px; font-weight:700; letter-spacing:0.06em;
+    color:var(--ink-dim); text-transform:uppercase; margin-bottom:-7px; }
+  .conv-out{ background:var(--panel); border:1px solid var(--panel-border);
+    border-radius:16px; padding:14px 16px; text-align:right; }
+  .conv-out .big{ font-family:"SFMono-Regular",Consolas,monospace;
+    font-size:clamp(22px,7vw,30px); font-weight:700; color:var(--accent); }
+  .conv-out .sub{ font-size:13px; color:var(--ink-dim); margin-top:5px; }
+  .conv-note{ font-size:11.5px; color:var(--ink-dim); text-align:center; min-height:14px; }
 </style>
 </head>
 <body>
@@ -268,6 +276,12 @@
       <button class="key fn" data-act="ncr">nCr</button>
       <button class="key fn" data-act="npr">nPr</button>
       <button class="key fn" data-act="s2d">S&#8660;D</button>
+
+      <button class="key fn" data-act="pi">&pi;</button>
+      <button class="key fn" data-act="euler">e</button>
+      <button class="key fn" data-act="cube">x&sup3;</button>
+      <button class="key fn" data-act="exp">&times;10&#8319;</button>
+      <button class="key fn" data-act="ans">ANS</button>
     </div>
 
     <div class="grid">
@@ -298,20 +312,63 @@
 
     <div class="conv-panel hidden" id="convPanel">
       <div class="conv-categories" id="convCategories"></div>
-      <div class="conv-row">
-        <input type="text" inputmode="decimal" class="conv-input" id="convFromInput" value="1">
-        <select class="conv-select" id="convFromUnit"></select>
+
+      <div class="conv-body" id="convStandard">
+        <div class="conv-row">
+          <input type="text" inputmode="decimal" class="conv-input" id="convFromInput" value="1">
+          <select class="conv-select" id="convFromUnit"></select>
+        </div>
+        <button class="conv-swap" id="convSwapBtn" aria-label="Swap units">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+            <polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+          </svg>
+        </button>
+        <div class="conv-row">
+          <div class="conv-result" id="convResult">1</div>
+          <select class="conv-select" id="convToUnit"></select>
+        </div>
       </div>
-      <button class="conv-swap" id="convSwapBtn" aria-label="Swap units">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
-          <polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
-        </svg>
-      </button>
-      <div class="conv-row">
-        <div class="conv-result" id="convResult">1</div>
-        <select class="conv-select" id="convToUnit"></select>
+
+      <div class="conv-body hidden" id="convDiscount">
+        <div class="conv-label">Original price</div>
+        <input type="text" inputmode="decimal" class="conv-input" id="discPrice" value="100">
+        <div class="conv-label">Discount %</div>
+        <input type="text" inputmode="decimal" class="conv-input" id="discPercent" value="20">
+        <div class="conv-label">Extra tax % (optional)</div>
+        <input type="text" inputmode="decimal" class="conv-input" id="discTax" value="0">
+        <div class="conv-out">
+          <div class="big" id="discFinal">—</div>
+          <div class="sub" id="discSaved">&nbsp;</div>
+        </div>
       </div>
+
+      <div class="conv-body hidden" id="convBmi">
+        <div class="conv-label">Weight</div>
+        <div class="conv-row">
+          <input type="text" inputmode="decimal" class="conv-input" id="bmiWeight" value="70">
+          <select class="conv-select" id="bmiWeightUnit">
+            <option value="kg">kg</option>
+            <option value="lb">lb</option>
+          </select>
+        </div>
+        <div class="conv-label">Height</div>
+        <div class="conv-row">
+          <input type="text" inputmode="decimal" class="conv-input" id="bmiHeight" value="170">
+          <select class="conv-select" id="bmiHeightUnit">
+            <option value="cm">cm</option>
+            <option value="m">m</option>
+            <option value="in">in</option>
+            <option value="ft">ft</option>
+          </select>
+        </div>
+        <div class="conv-out">
+          <div class="big" id="bmiValue">—</div>
+          <div class="sub" id="bmiClass">&nbsp;</div>
+        </div>
+      </div>
+
+      <div class="conv-note" id="convNote"></div>
     </div>
 
     <div class="ref-panel hidden" id="constPanel">
@@ -661,7 +718,7 @@ class MathEngine{
   tokenize(s){
     const tokens = [];
     let i = 0;
-    const idents = ["sin","cos","tan","log","ln","logb","nCr","nPr"];
+    const idents = ["sin","cos","tan","log","ln","logb","nCr","nPr","pi","e"];
     while (i < s.length){
       const ch = s[i];
       if (/[0-9.]/.test(ch)){
@@ -674,9 +731,12 @@ class MathEngine{
         let word = "";
         while (i < s.length && /[a-zA-Z]/.test(s[i])){ word += s[i]; i++; }
         if (!idents.includes(word)) throw new Error("Unrecognized: " + word);
+        if (word === "pi"){ tokens.push({ t:"NUM", v: Math.PI }); continue; }
+        if (word === "e"){ tokens.push({ t:"NUM", v: Math.E }); continue; }
         tokens.push({ t:"IDENT", v: word });
         continue;
       }
+      if (ch === "\u03c0"){ tokens.push({ t:"NUM", v: Math.PI }); i++; continue; }
       // x⁻¹ is two separate Unicode code points (⁻ and ¹) that must be
       // read together as one reciprocal symbol, not two operators.
       if (s.slice(i, i+2) === "\u207b\u00b9"){
@@ -711,11 +771,21 @@ class MathEngine{
       }
       return left;
     };
+    // A value sitting directly next to another value ("2π", "3(4+1)", "2sin(30)")
+    // is an implicit multiplication, the way it is written on paper.
+    const startsValue = () => {
+      const p = peek();
+      if (!p) return false;
+      if (p.t === "NUM") return true;
+      if (p.t === "IDENT") return p.v !== "nCr" && p.v !== "nPr";
+      return p.t === "OP" && (p.v === "(" || p.v === "\u221a");
+    };
     const parseMultiplicative = () => {
       let left = parseUnary();
       while (isOp("*") || isOp("/") ||
-             (peek() && peek().t==="IDENT" && (peek().v==="nCr"||peek().v==="nPr"))){
-        const op = eat().v;
+             (peek() && peek().t==="IDENT" && (peek().v==="nCr"||peek().v==="nPr")) ||
+             startsValue()){
+        const op = startsValue() ? "*" : eat().v;
         left = { t:"BIN", op, l:left, r:parseUnary() };
       }
       return left;
@@ -754,17 +824,20 @@ class MathEngine{
         eat(")");
         return inner;
       }
-      if (tok.t === "IDENT" && ["sin","cos","tan","log","ln","logb"].includes(tok.v)){
+      if (tok.t === "IDENT" && tok.v === "logb"){
+        eat();
+        eat("(");
+        const arg = parseAdditive();
+        eat(",");
+        const base = parseAdditive();
+        eat(")");
+        return { t:"FN", name:"logb", arg, base };
+      }
+      if (tok.t === "IDENT" && ["sin","cos","tan","log","ln"].includes(tok.v)){
         eat();
         eat("(");
         const arg = parseAdditive();
         eat(")");
-        if (tok.v === "logb") {
-          eat(",");
-          const base = parseAdditive();
-          eat(")");
-          return { t:"FN", name:"logb", arg, base };
-        }
         return { t:"FN", name: tok.v, arg };
       }
       throw new Error("Unexpected token near '" + tok.v + "'");
@@ -893,10 +966,12 @@ convModeBtn.addEventListener("click", ()=>{
   sciModeBtn.classList.remove("active");
 });
 
-// --- Unit converter: pure offline math only. Currency/Finance/Date/Discount
-// are deliberately NOT here — those need live external data, which is a
-// different kind of feature than a fixed conversion factor table.
+// --- Unit converter ---
+// Everything except Currency is fixed-factor offline math. Currency pulls
+// live rates (see fetchCurrencyRates) and caches the last successful set so
+// the app still converts when it's offline.
 const CONV_CATEGORIES = {
+  Currency: { special:"currency", units:{} },
   Length: { base:"m", units:{
     m:1, km:1000, cm:0.01, mm:0.001, mi:1609.344, yd:0.9144, ft:0.3048, in:0.0254
   }},
@@ -922,7 +997,87 @@ const CONV_CATEGORIES = {
   }},
   Temperature: { special:"temperature", units:{ "\u00b0C":"c", "\u00b0F":"f", K:"k" } },
   "Numeral System": { special:"base", units:{ Binary:2, Octal:8, Decimal:10, Hex:16 } },
+  Discount: { special:"discount", units:{} },
+  BMI: { special:"bmi", units:{} },
 };
+
+// --- Live currency rates ---
+// Free, key-less, CDN-hosted daily rates (ECB-derived, every ISO currency).
+// Two mirrors of the same dataset so one CDN being blocked isn't fatal.
+const FX_RATE_URLS = [
+  "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json",
+  "https://latest.currency-api.pages.dev/v1/currencies/usd.json"
+];
+const FX_NAME_URLS = [
+  "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies.json",
+  "https://latest.currency-api.pages.dev/v1/currencies.json"
+];
+const FX_CACHE_KEY = "fx-calc-fx-rates";
+// ISO 4217 codes, so the picker lists world currencies and not the
+// hundreds of crypto tickers the same dataset also carries.
+const CURRENCY_CODES = ["AED","AFN","ALL","AMD","ANG","AOA","ARS","AUD","AWG","AZN","BAM","BBD","BDT","BGN","BHD","BIF","BMD","BND","BOB","BRL","BSD","BTN","BWP","BYN","BZD","CAD","CDF","CHF","CLP","CNY","COP","CRC","CUP","CVE","CZK","DJF","DKK","DOP","DZD","EGP","ERN","ETB","EUR","FJD","FKP","FOK","GBP","GEL","GGP","GHS","GIP","GMD","GNF","GTQ","GYD","HKD","HNL","HRK","HTG","HUF","IDR","ILS","IMP","INR","IQD","IRR","ISK","JEP","JMD","JOD","JPY","KES","KGS","KHR","KID","KMF","KRW","KWD","KYD","KZT","LAK","LBP","LKR","LRD","LSL","LYD","MAD","MDL","MGA","MKD","MMK","MNT","MOP","MRU","MUR","MVR","MWK","MXN","MYR","MZN","NAD","NGN","NIO","NOK","NPR","NZD","OMR","PAB","PEN","PGK","PHP","PKR","PLN","PYG","QAR","RON","RSD","RUB","RWF","SAR","SBD","SCR","SDG","SEK","SGD","SHP","SLE","SOS","SRD","SSP","STN","SYP","SZL","THB","TJS","TMT","TND","TOP","TRY","TTD","TVD","TWD","TZS","UAH","UGX","USD","UYU","UZS","VES","VND","VUV","WST","XAF","XCD","XDR","XOF","XPF","YER","ZAR","ZMW","ZWL"];
+
+let fxRates = null, fxDate = null, fxNames = {}, fxFetching = null, fxStale = false;
+try{
+  const cached = JSON.parse(localStorage.getItem(FX_CACHE_KEY) || "null");
+  if (cached && cached.rates){ fxRates = cached.rates; fxDate = cached.date; fxNames = cached.names || {}; fxStale = true; }
+}catch(e){ /* no usable cache — we'll fetch */ }
+
+async function fetchFirstJson(urls){
+  for (const url of urls){
+    try{
+      const res = await fetch(url, { cache:"no-store" });
+      if (res.ok) return await res.json();
+    }catch(e){ /* try the next mirror */ }
+  }
+  return null;
+}
+
+function fetchCurrencyRates(){
+  if (fxFetching) return fxFetching;
+  fxFetching = (async ()=>{
+    const data = await fetchFirstJson(FX_RATE_URLS);
+    if (!data || !data.usd) return null;
+    const rates = {};
+    CURRENCY_CODES.forEach(code=>{
+      const v = data.usd[code.toLowerCase()];
+      if (typeof v === "number" && v > 0) rates[code] = v;
+    });
+    if (Object.keys(rates).length === 0) return null;
+    fxRates = rates;
+    fxDate = data.date || new Date().toISOString().slice(0,10);
+    // a service worker or HTTP cache can satisfy this fetch while offline,
+    // so only claim the rates are live when we actually have a connection
+    fxStale = navigator.onLine === false;
+    const names = await fetchFirstJson(FX_NAME_URLS);
+    if (names){
+      fxNames = {};
+      CURRENCY_CODES.forEach(code=>{
+        const n = names[code.toLowerCase()];
+        if (n) fxNames[code] = n;
+      });
+    }
+    try{ localStorage.setItem(FX_CACHE_KEY, JSON.stringify({ rates:fxRates, date:fxDate, names:fxNames })); }catch(e){}
+    return fxRates;
+  })().finally(()=>{ fxFetching = null; });
+  return fxFetching;
+}
+
+function currencyUnits(){
+  return fxRates ? Object.keys(fxRates) : CURRENCY_CODES.slice();
+}
+
+function unitsFor(category){
+  if (CONV_CATEGORIES[category].special === "currency") return currencyUnits();
+  return Object.keys(CONV_CATEGORIES[category].units);
+}
+
+function unitLabel(category, unit){
+  if (CONV_CATEGORIES[category].special === "currency" && fxNames[unit]){
+    return unit + " \u00b7 " + fxNames[unit];
+  }
+  return unit;
+}
 
 let convCategory = "Length";
 let convFromUnit = "m";
@@ -934,6 +1089,10 @@ const convFromUnitEl = document.getElementById("convFromUnit");
 const convToUnitEl = document.getElementById("convToUnit");
 const convResultEl = document.getElementById("convResult");
 const convSwapBtn = document.getElementById("convSwapBtn");
+const convStandard = document.getElementById("convStandard");
+const convDiscountPanel = document.getElementById("convDiscount");
+const convBmiPanel = document.getElementById("convBmi");
+const convNote = document.getElementById("convNote");
 
 function renderConvCategories(){
   convCategoriesEl.innerHTML = "";
@@ -941,27 +1100,89 @@ function renderConvCategories(){
     const chip = document.createElement("button");
     chip.className = "conv-chip" + (cat === convCategory ? " active" : "");
     chip.textContent = cat;
-    chip.addEventListener("click", ()=>{
-      convCategory = cat;
-      const units = Object.keys(CONV_CATEGORIES[cat].units);
-      convFromUnit = units[0];
-      convToUnit = units[1] || units[0];
-      renderConvCategories();
-      renderConvUnitSelects();
-      runConversion();
-    });
+    chip.addEventListener("click", ()=> selectConvCategory(cat));
     convCategoriesEl.appendChild(chip);
   });
 }
 
+function selectConvCategory(cat){
+  convCategory = cat;
+  const units = unitsFor(cat);
+  if (cat === "Currency"){
+    convFromUnit = "USD";
+    convToUnit = units.includes("EUR") ? "EUR" : units[1] || units[0];
+  } else {
+    convFromUnit = units[0];
+    convToUnit = units[1] || units[0];
+  }
+  renderConvCategories();
+  renderConvUnitSelects();
+  showConvBody();
+  runConversion();
+  if (CONV_CATEGORIES[cat].special === "currency") ensureCurrencyRates();
+}
+
+// Currency, Discount and BMI each need their own inputs rather than the
+// single value + two unit pickers the factor-table categories share.
+function showConvBody(){
+  const special = CONV_CATEGORIES[convCategory].special;
+  convStandard.classList.toggle("hidden", special === "discount" || special === "bmi");
+  convDiscountPanel.classList.toggle("hidden", special !== "discount");
+  convBmiPanel.classList.toggle("hidden", special !== "bmi");
+  updateConvNote();
+}
+
+window.addEventListener("offline", ()=>{ if (fxRates) fxStale = true; updateConvNote(); });
+window.addEventListener("online", ()=>{ fxFetching = null; if (CONV_CATEGORIES[convCategory].special === "currency") ensureCurrencyRates(); });
+
+function updateConvNote(){
+  const special = CONV_CATEGORIES[convCategory].special;
+  if (special === "currency"){
+    if (!fxRates) convNote.textContent = "Fetching live rates\u2026";
+    else convNote.textContent = (fxStale ? "Offline \u2014 cached rates from " : "Live rates \u00b7 ") + (fxDate || "unknown date");
+  } else if (special === "bmi"){
+    convNote.textContent = "BMI = weight (kg) \u00f7 height (m)\u00b2";
+  } else {
+    convNote.textContent = "";
+  }
+}
+
+function ensureCurrencyRates(){
+  updateConvNote();
+  fetchCurrencyRates().then(rates=>{
+    if (!rates){
+      convNote.textContent = fxRates
+        ? "Offline \u2014 cached rates from " + (fxDate || "unknown date")
+        : "Couldn't reach the rates service \u2014 check your connection";
+      return;
+    }
+    if (convCategory === "Currency"){
+      renderConvUnitSelects();
+      runConversion();
+    }
+    updateConvNote();
+  });
+}
+
 function renderConvUnitSelects(){
-  const units = Object.keys(CONV_CATEGORIES[convCategory].units);
-  convFromUnitEl.innerHTML = units.map(u => `<option value="${u}"${u===convFromUnit?" selected":""}>${u}</option>`).join("");
-  convToUnitEl.innerHTML = units.map(u => `<option value="${u}"${u===convToUnit?" selected":""}>${u}</option>`).join("");
+  const units = unitsFor(convCategory);
+  if (!units.includes(convFromUnit)) convFromUnit = units[0];
+  if (!units.includes(convToUnit)) convToUnit = units[1] || units[0];
+  const options = (selected) => units
+    .map(u => `<option value="${u}"${u===selected?" selected":""}>${unitLabel(convCategory, u)}</option>`)
+    .join("");
+  convFromUnitEl.innerHTML = options(convFromUnit);
+  convToUnitEl.innerHTML = options(convToUnit);
 }
 
 function convertValue(value, category, fromUnit, toUnit){
   const cat = CONV_CATEGORIES[category];
+  if (cat.special === "currency"){
+    if (!fxRates) throw new Error("no rates yet");
+    const from = fxRates[fromUnit], to = fxRates[toUnit];
+    if (!from || !to) throw new Error("unknown currency");
+    return value * (to / from);
+  }
   if (cat.special === "temperature"){
     const f = cat.units[fromUnit], t = cat.units[toUnit];
     let c;
@@ -983,9 +1204,11 @@ function convertValue(value, category, fromUnit, toUnit){
 }
 
 function runConversion(){
+  const cat = CONV_CATEGORIES[convCategory];
+  if (cat.special === "discount"){ runDiscount(); return; }
+  if (cat.special === "bmi"){ runBmi(); return; }
   const raw = convFromInput.value.trim();
   try{
-    const cat = CONV_CATEGORIES[convCategory];
     const inputVal = cat.special === "base" ? raw : parseFloat(raw);
     if (cat.special !== "base" && (raw === "" || isNaN(inputVal))){
       convResultEl.textContent = "\u2014";
@@ -993,12 +1216,72 @@ function runConversion(){
     }
     const result = convertValue(inputVal, convCategory, convFromUnit, convToUnit);
     convResultEl.textContent = typeof result === "number"
-      ? (Math.round(result * 1e8) / 1e8).toString()
+      ? (cat.special === "currency"
+          ? (Math.round(result * 100) / 100).toFixed(2)
+          : (Math.round(result * 1e8) / 1e8).toString())
       : result;
   } catch(e){
     convResultEl.textContent = "\u2014";
   }
 }
+
+const discPrice = document.getElementById("discPrice");
+const discPercent = document.getElementById("discPercent");
+const discTax = document.getElementById("discTax");
+const discFinal = document.getElementById("discFinal");
+const discSaved = document.getElementById("discSaved");
+
+function runDiscount(){
+  const price = parseFloat(discPrice.value);
+  const pct = parseFloat(discPercent.value);
+  const tax = parseFloat(discTax.value) || 0;
+  if (isNaN(price) || isNaN(pct)){
+    discFinal.textContent = "\u2014";
+    discSaved.innerHTML = "&nbsp;";
+    return;
+  }
+  const saved = price * (pct / 100);
+  const afterDiscount = price - saved;
+  const final = afterDiscount * (1 + tax / 100);
+  const money = (n) => (Math.round(n * 100) / 100).toFixed(2);
+  discFinal.textContent = money(final);
+  discSaved.textContent = "You save " + money(saved) + " (" + pct + "% off " + money(price) + ")"
+    + (tax ? " \u00b7 incl. " + tax + "% tax" : "");
+}
+
+const bmiWeight = document.getElementById("bmiWeight");
+const bmiWeightUnit = document.getElementById("bmiWeightUnit");
+const bmiHeight = document.getElementById("bmiHeight");
+const bmiHeightUnit = document.getElementById("bmiHeightUnit");
+const bmiValue = document.getElementById("bmiValue");
+const bmiClass = document.getElementById("bmiClass");
+
+function runBmi(){
+  const w = parseFloat(bmiWeight.value);
+  const h = parseFloat(bmiHeight.value);
+  if (isNaN(w) || isNaN(h) || w <= 0 || h <= 0){
+    bmiValue.textContent = "\u2014";
+    bmiClass.innerHTML = "&nbsp;";
+    return;
+  }
+  const kg = bmiWeightUnit.value === "lb" ? w * 0.45359237 : w;
+  const metres = { cm:0.01, m:1, in:0.0254, ft:0.3048 }[bmiHeightUnit.value] * h;
+  const bmi = kg / (metres * metres);
+  if (!isFinite(bmi)){
+    bmiValue.textContent = "\u2014";
+    bmiClass.innerHTML = "&nbsp;";
+    return;
+  }
+  bmiValue.textContent = (Math.round(bmi * 10) / 10).toFixed(1);
+  bmiClass.textContent = bmi < 18.5 ? "Underweight"
+    : bmi < 25 ? "Normal weight"
+    : bmi < 30 ? "Overweight"
+    : "Obese";
+}
+
+[discPrice, discPercent, discTax].forEach(el => el.addEventListener("input", runDiscount));
+[bmiWeight, bmiHeight].forEach(el => el.addEventListener("input", runBmi));
+[bmiWeightUnit, bmiHeightUnit].forEach(el => el.addEventListener("change", runBmi));
 
 convFromInput.addEventListener("input", runConversion);
 convFromUnitEl.addEventListener("change", ()=>{ convFromUnit = convFromUnitEl.value; runConversion(); });
@@ -1011,6 +1294,7 @@ convSwapBtn.addEventListener("click", ()=>{
 
 renderConvCategories();
 renderConvUnitSelects();
+showConvBody();
 runConversion();
 
 angleBtn.addEventListener("click", ()=>{
@@ -1048,6 +1332,16 @@ document.querySelectorAll("[data-act]").forEach(btn=>{
       return;
     }
     if (act === "pow"){ insertInfix("^"); return; }
+    if (act === "cube"){ insertInfix("^3"); return; }
+    if (act === "exp"){ insertInfix("*10^"); return; }
+    if (act === "pi"){ insertDigit("\u03c0"); return; }
+    if (act === "euler"){ insertDigit("e"); return; }
+    if (act === "ans"){
+      if (lastResult === null){ toast("Calculate something first"); return; }
+      if (justEvaluated){ expr=""; justEvaluated=false; }
+      insertAtCaret(String(lastResult));
+      return;
+    }
     if (["sin","cos","tan","log","ln"].includes(act)){ insertFunction(act); return; }
     if (act === "sqrt"){ insertFunction("\u221a"); return; }
     if (act === "sq"){ insertPostfix("\u00b2"); return; }
@@ -1197,7 +1491,7 @@ if (SpeechRec){
       return;
     }
     toast('Heard: "' + transcript + '"');
-    setDisplay(parsed);
+    setDisplay(continueFromLastResult(parsed));
     evaluate();
   };
 
@@ -1248,6 +1542,16 @@ function handleVoiceCommand(text){
     toast("Standard mode");
     return true;
   }
+  if (/\b(currency|exchange rate|exchange rates)\b/.test(t) && /\b(open|show|switch to|go to)\b/.test(t)){
+    convModeBtn.click();
+    selectConvCategory("Currency");
+    return true;
+  }
+  if (/\b(discount|bmi|body mass index)\b/.test(t) && /\b(open|show|switch to|go to|calculate)\b/.test(t)){
+    convModeBtn.click();
+    selectConvCategory(/\b(bmi|body mass index)\b/.test(t) ? "BMI" : "Discount");
+    return true;
+  }
   if (/\b(open history|show history|view history)\b/.test(t)){
     openHistory();
     return true;
@@ -1290,7 +1594,7 @@ function handleVoiceCommand(text){
   }
 
   // "convert 20 feet to meters" style unit conversion
-  const convMatch = t.match(/convert\s+([\d.]+)\s*([a-z\u00b0\/]+)\s+to\s+([a-z\u00b0\/]+)/i);
+  const convMatch = t.match(/convert\s+([\d.]+)\s*([a-z\u00b0\/ ]+?)\s+(?:in)?to\s+([a-z\u00b0\/ ]+)/i);
   if (convMatch){
     const UNIT_ALIASES = {
       meter:"m", meters:"m", metre:"m", metres:"m",
@@ -1306,18 +1610,40 @@ function handleVoiceCommand(text){
       byte:"byte", bytes:"byte", kilobyte:"KB", kilobytes:"KB",
       megabyte:"MB", megabytes:"MB", gigabyte:"GB", gigabytes:"GB", terabyte:"TB", terabytes:"TB",
       celsius:"\u00b0C", fahrenheit:"\u00b0F", kelvin:"K",
-      "m/s":"m/s", "km/h":"km/h", mph:"mph", knot:"knot", knots:"knot"
+      "m/s":"m/s", "km/h":"km/h", mph:"mph", knot:"knot", knots:"knot",
+      dollar:"USD", dollars:"USD", usd:"USD", "us dollars":"USD",
+      euro:"EUR", euros:"EUR", eur:"EUR",
+      sterling:"GBP", gbp:"GBP",
+      naira:"NGN", ngn:"NGN", cedi:"GHS", cedis:"GHS",
+      rand:"ZAR", shilling:"KES", shillings:"KES",
+      yen:"JPY", jpy:"JPY", yuan:"CNY", renminbi:"CNY", cny:"CNY",
+      rupee:"INR", rupees:"INR", inr:"INR", dirham:"AED", dirhams:"AED",
+      riyal:"SAR", peso:"MXN", pesos:"MXN",
+      real:"BRL", reais:"BRL", ruble:"RUB", rubles:"RUB",
+      franc:"CHF", francs:"CHF", won:"KRW", lira:"TRY"
     };
     const normalize = (u) => {
-      const key = u.toLowerCase().trim();
-      return UNIT_ALIASES[key] || u;
+      const key = u.toLowerCase().replace(/\b(the|a|an|some)\b/g, " ").replace(/\s+/g, " ").trim();
+      const tryKey = (k) => {
+        if (UNIT_ALIASES[k]) return UNIT_ALIASES[k];
+        const upper = k.toUpperCase();
+        if (CURRENCY_CODES.includes(upper)) return upper;
+        return null;
+      };
+      // try the full phrase first ("us dollars"), then progressively shorter tails ("dollars")
+      const words = key.split(" ");
+      for (let i = 0; i < words.length; i++){
+        const hit = tryKey(words.slice(i).join(" "));
+        if (hit) return hit;
+      }
+      return u.trim();
     };
     const value = convMatch[1];
     const fromU = normalize(convMatch[2]);
     const toU = normalize(convMatch[3]);
 
     const category = Object.keys(CONV_CATEGORIES).find(cat=>{
-      const units = Object.keys(CONV_CATEGORIES[cat].units);
+      const units = unitsFor(cat);
       return units.includes(fromU) && units.includes(toU);
     });
 
@@ -1332,8 +1658,13 @@ function handleVoiceCommand(text){
     convModeBtn.click();
     renderConvCategories();
     renderConvUnitSelects();
+    showConvBody();
     convFromInput.value = value;
     runConversion();
+    if (category === "Currency"){
+      ensureCurrencyRates();
+      if (!fxRates){ toast("Fetching live rates for " + fromU + " \u2192 " + toU); return true; }
+    }
     toast(value + " " + fromU + " = " + convResultEl.textContent + " " + toU);
     return true;
   }
@@ -1341,8 +1672,22 @@ function handleVoiceCommand(text){
   return false;
 }
 
+// Speaking just an operation right after an answer continues from that
+// answer, like tapping "÷ 2" on the keypad would: "two plus two" → 4,
+// then "divided by two" → 4/2 instead of the bare "/2" that can't parse.
+function continueFromLastResult(parsed){
+  if (lastResult === null) return parsed;
+  if (!/^[+\-*/^²!\u207b]/.test(parsed)) return parsed;
+  return String(lastResult) + parsed;
+}
+
 function parseSpokenMath(text){
   let t = " " + text.trim().toLowerCase() + " ";
+
+  // Spoken references to the answer already on screen.
+  if (lastResult !== null){
+    t = t.replace(/\b(?:the\s+)?(?:previous\s+|last\s+)?(?:answer|ans|result)\b/g, " " + lastResult + " ");
+  }
 
   t = t.replace(/\bplus\b|\badd\b|\badded to\b/g, " + ")
        .replace(/\bminus\b|\bsubtract\b|\btake away\b|\bnegative\b/g, " - ")
@@ -1351,6 +1696,8 @@ function parseSpokenMath(text){
        .replace(/\bto the power of\b|\braise(d)? to (the )?power( of)?\b|\bpower of\b/g, " ^ ")
        .replace(/\bpoint\b/g, " . ")
        .replace(/\bpercent\b/g, " /100 ")
+       .replace(/\bpi\b|\bpie\b/g, " \u03c0 ")
+       .replace(/\beuler'?s? number\b/g, " e ")
        // These now match WITH or WITHOUT "of" — "log 50" and "log of 50"
        // both work, since real speech often drops the "of".
        .replace(/\bsquare\s*root(\s+of)?\b/g, " \u221a( ")
@@ -1424,11 +1771,15 @@ function parseSpokenMath(text){
   t = out.join("");
 
   // "squared"/"cubed"/"factorial" apply to whatever number was just said.
-  t = t.replace(/(\d+)squared\b/g, "$1\u00b2")
-       .replace(/(\d+)cubed\b/g, "$1^3")
-       .replace(/(\d+)factorial\b/g, "$1!");
+  t = t.replace(/(\d+|\u03c0)squared\b/g, "$1\u00b2")
+       .replace(/(\d+|\u03c0)cubed\b/g, "$1^3")
+       .replace(/(\d+|\u03c0)factorial\b/g, "$1!")
+       // "squared" said on its own applies to the answer already on screen
+       .replace(/^squared$/, "\u00b2")
+       .replace(/^cubed$/, "^3")
+       .replace(/^factorial$/, "!");
 
-  t = t.replace(/[^0-9a-z+\-*/.^()\u221a\u00b2!]/g, "");
+  t = t.replace(/[^0-9a-z+\-*/.^()\u221a\u00b2!\u03c0]/g, "");
 
   // Voice-inserted functions (log(, sin(, √( ...) never get a spoken
   // "close bracket" — auto-balance any unclosed parens at the end,
@@ -1437,7 +1788,10 @@ function parseSpokenMath(text){
   const closeCount = (t.match(/\)/g) || []).length;
   if (openCount > closeCount) t += ")".repeat(openCount - closeCount);
 
-  if (t === "" || !/[0-9]/.test(t)) return null;
+  const hasValue = /[0-9\u03c0]/.test(t);
+  const isBareContinuation = /^[+\-*/^]$|^[\u00b2!]$/.test(t);
+  if (t === "" || (!hasValue && !isBareContinuation)) return null;
+  if (isBareContinuation && lastResult === null) return null;
   return t;
 }
 
