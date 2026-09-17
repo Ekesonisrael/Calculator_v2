@@ -1026,7 +1026,7 @@ try{
 async function fetchFirstJson(urls){
   for (const url of urls){
     try{
-      const res = await fetch(url, { cache:"no-cache" });
+      const res = await fetch(url, { cache:"no-store" });
       if (res.ok) return await res.json();
     }catch(e){ /* try the next mirror */ }
   }
@@ -1046,7 +1046,9 @@ function fetchCurrencyRates(){
     if (Object.keys(rates).length === 0) return null;
     fxRates = rates;
     fxDate = data.date || new Date().toISOString().slice(0,10);
-    fxStale = false;
+    // a service worker or HTTP cache can satisfy this fetch while offline,
+    // so only claim the rates are live when we actually have a connection
+    fxStale = navigator.onLine === false;
     const names = await fetchFirstJson(FX_NAME_URLS);
     if (names){
       fxNames = {};
@@ -1129,6 +1131,9 @@ function showConvBody(){
   convBmiPanel.classList.toggle("hidden", special !== "bmi");
   updateConvNote();
 }
+
+window.addEventListener("offline", ()=>{ if (fxRates) fxStale = true; updateConvNote(); });
+window.addEventListener("online", ()=>{ fxFetching = null; if (CONV_CATEGORIES[convCategory].special === "currency") ensureCurrencyRates(); });
 
 function updateConvNote(){
   const special = CONV_CATEGORIES[convCategory].special;
