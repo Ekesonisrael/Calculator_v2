@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>fx-calc</title>
+<meta name="theme-color" content="#05060a" id="themeColorMeta">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+  :root{
+    --bg-a:#05060a; --bg-b:#0d1220; --bg-c:#1a2440;
+    --key-num:#1c1d22; --key-num-text:#f2f2f2;
+    --key-fn:#262830; --key-fn-text:#d6d6da;
+    --accent:#3E7BFA; --accent-b:#1D4ED8; --accent-text:#ffffff;
+    --ink:#ffffff; --ink-dim:rgba(255,255,255,0.42);
+    --badge-bg:rgba(255,255,255,0.08); --badge-text:rgba(255,255,255,0.65);
+    --panel:rgba(255,255,255,0.06); --panel-border:rgba(255,255,255,0.1);
+    --seg-active-text:#ffffff;
+    --key-sheen:rgba(255,255,255,0.10);
+  }
+  [data-theme="light"]{
+    --bg-a:#eef0f4; --bg-b:#e4e7ee; --bg-c:#dfe6f5;
+    --key-num:#ffffff; --key-num-text:#1a1a1a;
+    --key-fn:#e7e9ee; --key-fn-text:#4a4a4a;
+    --accent:#3E7BFA; --accent-b:#1D4ED8; --accent-text:#ffffff;
+    --ink:#161616; --ink-dim:rgba(0,0,0,0.4);
+    --badge-bg:rgba(0,0,0,0.06); --badge-text:rgba(0,0,0,0.55);
+    --panel:rgba(0,0,0,0.04); --panel-border:rgba(0,0,0,0.08);
+    --seg-active-text:#ffffff;
+    --key-sheen:rgba(255,255,255,0.55);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{
+    margin:0; height:100%;
+    background:radial-gradient(140% 100% at 50% -20%, var(--bg-c), var(--bg-b) 45%, var(--bg-a) 85%);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    overscroll-behavior:none;
+    transition:background 0.25s ease;
+  }
+  .shell{ height:100dvh; display:flex; flex-direction:column;
+    padding:calc(10px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));
+    gap:14px; position:relative;
+  }
+  .topbar{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; flex-shrink:0; padding:2px 2px; }
+  .topbar-left{ display:flex; gap:8px; }
+  .segmented{ display:flex; background:var(--panel); border:1px solid var(--panel-border);
+    border-radius:999px; padding:3px; gap:2px; justify-self:center; }
+  .seg{ appearance:none; border:none; background:transparent; color:var(--ink-dim);
+    font-size:11px; font-weight:700; letter-spacing:0.04em;
+    padding:6px 14px; border-radius:999px; font-family:inherit; }
+  .seg.active{ background:var(--accent); color:var(--seg-active-text); }
+  .icon-btn{
+    width:32px; height:32px; border-radius:50%;
+    background:var(--panel); border:1px solid var(--panel-border);
+    color:var(--ink-dim); display:flex; align-items:center; justify-content:center;
+  }
+  .icon-btn svg{ width:15px; height:15px; }
+  .calc{ flex:1; min-height:0; display:flex; flex-direction:column; }
+  .display{ position:relative; padding:8px 6px 18px; flex:0 0 auto;
+    display:flex; flex-direction:column; justify-content:flex-end;
+  }
+  .mic-fab{
+    position:fixed; width:60px; height:60px; border-radius:50%;
+    background:linear-gradient(165deg, rgba(255,255,255,0.35), transparent 55%), var(--accent);
+    color:var(--accent-text); border:none;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 8px 20px rgba(37,99,235,0.45), inset 0 1px 0 rgba(255,255,255,0.3);
+    z-index:40; touch-action:none;
+    opacity:1; transition:opacity 0.5s ease, transform 0.15s ease;
+  }
+  .mic-fab svg{ width:24px; height:24px; }
+  .mic-fab:active{ transform:scale(0.94); }
+  .mic-fab.dragging{ transition:none; }
+  .mic-fab.idle{ opacity:0.4; }
+  .mic-fab.listening{ opacity:1; animation:pulse 1s infinite ease-in-out; }
+  @keyframes pulse{
+    0%,100%{ box-shadow:0 0 0 0 rgba(37,99,235,0.55), 0 8px 20px rgba(37,99,235,0.45); }
+    50%{ box-shadow:0 0 0 12px rgba(37,99,235,0), 0 8px 20px rgba(37,99,235,0.45); }
+  }
+  .angle-chip{ position:absolute; top:0; right:0; padding:0 10px; height:24px; border-radius:11px;
+    background:var(--badge-bg); border:none;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--accent); font-size:10.5px; letter-spacing:0.08em; font-weight:700;
+    font-family:"SFMono-Regular",Consolas,monospace;
+  }
+  .history-line{ font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+    color:var(--ink-dim); font-size:clamp(13px, 3.6vw, 16px); min-height:18px; font-weight:500;
+    text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    user-select:text; -webkit-user-select:text; margin-top:22px; flex-shrink:0;
+  }
+  .current{ font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+    color:var(--ink); font-size:clamp(34px, 12vw, 54px); font-weight:600;
+    text-align:right; white-space:nowrap; overflow-x:auto; overflow-y:visible; flex-shrink:0;
+    scrollbar-width:none; direction:ltr; outline:none;
+    user-select:text; -webkit-user-select:text;
+  }
+  .current::-webkit-scrollbar{ display:none; }
+  .current:empty::before{ content:"0"; }
+  .sci-rows{ display:grid; grid-template-columns:repeat(5, 1fr); grid-auto-rows:1fr; gap:9px;
+    margin-bottom:10px; flex:0 0 auto; min-height:150px; }
+  .sci-rows.hidden{ display:none; }
+  .grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; flex:1; min-height:0; }
+  .grid.hidden{ display:none; }
+  .key{ appearance:none; border:none; cursor:pointer; border-radius:24px;
+    font-size:clamp(17px, 4.8vw, 22px); font-weight:500; color:var(--key-num-text);
+    background:var(--key-num);
+    box-shadow:none;
+    transition:transform 0.06s ease, filter 0.06s ease, background 0.1s ease;
+    display:flex; align-items:center; justify-content:center; height:100%; width:100%; padding:2px;
+  }
+  .key:active{ transform:scale(0.94); filter:brightness(1.3); }
+  .key:focus-visible, .icon-btn:focus-visible, .seg:focus-visible, .history-item:focus-visible{
+    outline:2px solid var(--accent); outline-offset:2px;
+  }
+  .sci-rows .key{ min-height:0; padding:4px; border-radius:16px; font-size:clamp(14px, 4vw, 17px); }
+  .key.fn{ background:var(--key-fn);
+    color:var(--key-fn-text); }
+  .key.op{ background:var(--accent);
+    color:var(--accent-text); font-weight:700; font-size:clamp(20px, 5.8vw, 26px);
+    box-shadow:none; }
+  .key.eq{ background:var(--accent);
+    color:var(--accent-text); font-weight:700; font-size:clamp(20px, 6vw, 27px);
+    box-shadow:none; }
+  .key.wide{ grid-column:span 2; }
+  .toast{ position:fixed; left:50%; bottom:26px; transform:translateX(-50%);
+    background:rgba(30,32,38,0.95); color:#fff; padding:9px 18px; border-radius:20px;
+    font-size:13px; opacity:0; transition:opacity 0.2s ease; pointer-events:none;
+    border:1px solid rgba(255,255,255,0.08); max-width:85vw; text-align:center; z-index:50;
+  }
+  .toast.show{ opacity:1; }
+
+  .segmented{overflow-x:auto;max-width:100%;scrollbar-width:none;}
+  .segmented::-webkit-scrollbar{display:none;}
+  .seg{white-space:nowrap;padding-left:11px;padding-right:11px;}
+  .ref-panel{display:flex;flex-direction:column;gap:12px;flex:1;min-height:0;padding-top:6px;}
+  .ref-panel.hidden{display:none;}
+  .ref-search{width:100%;font:600 15px inherit;color:var(--ink);background:var(--panel);border:1px solid var(--panel-border);border-radius:16px;padding:14px 16px;outline:none;}
+  .ref-cats{display:flex;gap:8px;overflow-x:auto;padding-bottom:3px;scrollbar-width:none;flex:0 0 auto;}
+  .ref-cats::-webkit-scrollbar{display:none;}
+  .ref-chip{appearance:none;border:1px solid var(--panel-border);background:var(--panel);color:var(--ink-dim);padding:8px 13px;border-radius:999px;font:600 12px inherit;white-space:nowrap;}
+  .ref-chip.active{background:var(--accent);color:var(--accent-text);border-color:transparent;}
+  .ref-list{overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-bottom:8px;}
+  .ref-card{background:var(--panel);border:1px solid var(--panel-border);border-radius:16px;padding:12px 14px;color:var(--ink);}
+  .ref-title{font-size:15px;font-weight:700;margin-bottom:5px;}
+  .ref-value{font-family:SFMono-Regular,Consolas,monospace;color:var(--accent);font-size:14px;font-weight:700;word-break:break-word;}
+  .ref-meta{font-size:12px;color:var(--ink-dim);margin-top:5px;line-height:1.4;}
+  .history-overlay{
+    position:fixed; inset:0; background:rgba(6,7,9,0.72);
+    backdrop-filter:blur(4px);
+    display:flex; align-items:flex-end; justify-content:center;
+    opacity:0; pointer-events:none; transition:opacity 0.18s ease; z-index:100;
+  }
+  .history-overlay.open{ opacity:1; pointer-events:auto; }
+  .history-panel{
+    width:100%; max-width:460px; max-height:72vh;
+    background:var(--bg-b); border:1px solid var(--panel-border);
+    border-radius:22px 22px 0 0; padding:14px 14px calc(14px + env(safe-area-inset-bottom));
+    display:flex; flex-direction:column;
+    transform:translateY(12px);
+    transition:transform 0.18s ease;
+  }
+  .history-overlay.open .history-panel{ transform:translateY(0); }
+  .history-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .history-header h3{ margin:0; font-size:14px; color:var(--ink); letter-spacing:0.04em; }
+  .history-header .actions{ display:flex; gap:10px; }
+  .history-header button{
+    background:none; border:none; color:var(--ink-dim); font-size:12.5px; font-family:inherit;
+  }
+  .history-list{ overflow-y:auto; display:flex; flex-direction:column; gap:6px; }
+  .history-empty{ color:var(--ink-dim); font-size:13px; text-align:center; padding:30px 0; }
+  .history-item{
+    background:var(--panel); border:1px solid var(--panel-border);
+    border-radius:14px; padding:10px 14px; text-align:right; cursor:pointer;
+  }
+  .history-item .h-expr{ color:var(--ink-dim); font-size:12.5px; }
+  .history-item .h-result{ color:var(--ink); font-size:19px; font-weight:600; }
+
+  .conv-panel{ display:flex; flex-direction:column; gap:14px; flex:1; min-height:0; padding-top:6px; }
+  .conv-panel.hidden{ display:none; }
+  .conv-categories{
+    display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; flex:0 0 auto;
+    scrollbar-width:none;
+  }
+  .conv-categories::-webkit-scrollbar{ display:none; }
+  .conv-chip{
+    appearance:none; border:none; cursor:pointer; flex:0 0 auto;
+    background:var(--panel); border:1px solid var(--panel-border); color:var(--ink-dim);
+    padding:9px 16px; border-radius:999px; font-size:13px; font-weight:600;
+  }
+  .conv-chip.active{ background:var(--accent); color:var(--accent-text); border-color:transparent; }
+  .conv-row{ display:flex; gap:10px; align-items:center; flex:0 0 auto; }
+  .conv-input, .conv-result{
+    flex:1; min-width:0;
+    font-family:"SFMono-Regular",Consolas,monospace; font-size:clamp(20px,6vw,28px); font-weight:600;
+    color:var(--ink); background:var(--panel); border:1px solid var(--panel-border);
+    border-radius:16px; padding:14px 16px; text-align:right;
+  }
+  .conv-result{ color:var(--accent); }
+  .conv-select{
+    flex:0 0 auto; max-width:38%;
+    font-family:inherit; font-size:14px; font-weight:600; color:var(--ink);
+    background:var(--panel); border:1px solid var(--panel-border);
+    border-radius:16px; padding:14px 10px;
+  }
+  .conv-swap{
+    align-self:center; width:42px; height:42px; border-radius:50%;
+    background:var(--panel); border:1px solid var(--panel-border); color:var(--accent);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .conv-swap svg{ width:19px; height:19px; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="icon-btn" id="themeBtn" aria-label="Toggle theme">
+        <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4"></circle>
+          <line x1="12" y1="2" x2="12" y2="4"></line>
+          <line x1="12" y1="20" x2="12" y2="22"></line>
+          <line x1="4" y1="12" x2="2" y2="12"></line>
+          <line x1="22" y1="12" x2="20" y2="12"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="segmented">
+      <button class="seg active" id="stdModeBtn">STD</button>
+      <button class="seg" id="sciModeBtn">SCI</button>
+      <button class="seg" id="convModeBtn">CONV</button>
+      <button class="seg" id="constModeBtn">CONST</button>
+      <button class="seg" id="eqnModeBtn">EQN</button>
+    </div>
+    <button class="icon-btn" id="historyBtn" aria-label="History" style="justify-self:end;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="9"></circle>
+        <polyline points="12 7 12 12 15 14"></polyline>
+      </svg>
+    </button>
+  </div>
+
+  <div class="calc">
+    <div class="display">
+      <button class="angle-chip" id="angleBtn">DEG</button>
+      <div class="history-line" id="historyLine">&nbsp;</div>
+      <div class="current" id="current" contenteditable="true" inputmode="none" spellcheck="false" autocorrect="off" autocapitalize="off"></div>
+    </div>
+
+    <div class="sci-rows hidden" id="sciRows">
+      <button class="key fn" data-act="sin">sin</button>
+      <button class="key fn" data-act="cos">cos</button>
+      <button class="key fn" data-act="tan">tan</button>
+      <button class="key fn" data-act="log">log</button>
+      <button class="key fn" data-act="ln">ln</button>
+
+      <button class="key fn" data-act="sqrt">&#8730;x</button>
+      <button class="key fn" data-act="sq">x&sup2;</button>
+      <button class="key fn" data-act="recip">x&#8315;&#185;</button>
+      <button class="key fn" data-act="pow">x^y</button>
+      <button class="key fn" data-act="fact">x!</button>
+
+      <button class="key fn" data-num="(">(</button>
+      <button class="key fn" data-num=")">)</button>
+      <button class="key fn" data-act="ncr">nCr</button>
+      <button class="key fn" data-act="npr">nPr</button>
+      <button class="key fn" data-act="s2d">S&#8660;D</button>
+      <button class="key fn" data-num="π">π</button>
+    </div>
+
+    <div class="grid">
+      <button class="key fn" data-act="clear">AC</button>
+      <button class="key fn" data-act="back">DEL</button>
+      <button class="key fn" data-act="percent">%</button>
+      <button class="key op" data-op="/">&divide;</button>
+
+      <button class="key" data-num="7">7</button>
+      <button class="key" data-num="8">8</button>
+      <button class="key" data-num="9">9</button>
+      <button class="key op" data-op="*">&times;</button>
+
+      <button class="key" data-num="4">4</button>
+      <button class="key" data-num="5">5</button>
+      <button class="key" data-num="6">6</button>
+      <button class="key op" data-op="-">&minus;</button>
+
+      <button class="key" data-num="1">1</button>
+      <button class="key" data-num="2">2</button>
+      <button class="key" data-num="3">3</button>
+      <button class="key op" data-op="+">+</button>
+
+      <button class="key" data-num=".">.</button>
+      <button class="key" data-num="0">0</button>
+      <button class="key eq wide" data-act="equals">=</button>
+    </div>
+
+    <div class="conv-panel hidden" id="convPanel">
+      <div class="conv-categories" id="convCategories"></div>
+      <div class="conv-row">
+        <input type="text" inputmode="decimal" class="conv-input" id="convFromInput" value="1">
+        <select class="conv-select" id="convFromUnit"></select>
+      </div>
+      <button class="conv-swap" id="convSwapBtn" aria-label="Swap units">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+          <polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+        </svg>
+      </button>
+      <div class="conv-row">
+        <div class="conv-result" id="convResult">1</div>
+        <select class="conv-select" id="convToUnit"></select>
+      </div>
+    </div>
+
+    <div class="ref-panel hidden" id="constPanel">
+      <input class="ref-search" id="constSearch" type="search" placeholder="Search constants…" autocomplete="off">
+      <div class="ref-cats" id="constCategories"></div>
+      <div class="ref-list" id="constList"></div>
+    </div>
+
+    <div class="ref-panel hidden" id="eqnPanel">
+      <input class="ref-search" id="eqnSearch" type="search" placeholder="Search equations…" autocomplete="off">
+      <div class="ref-cats" id="eqnCategories"></div>
+      <div class="ref-list" id="eqnList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="history-overlay" id="historyOverlay">
+  <div class="history-panel">
+    <div class="history-header">
+      <h3>History</h3>
+      <div class="actions">
+        <button id="clearHistoryBtn">Clear</button>
+        <button id="closeHistoryBtn">Close</button>
+      </div>
+    </div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+</div>
+
+<button class="mic-fab" id="micBtn" aria-label="Voice input">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"></path>
+    <path d="M19 11a7 7 0 0 1-14 0"></path>
+    <line x1="12" y1="19" x2="12" y2="22"></line>
+  </svg>
+</button>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let expr = "";
+let lastResult = null;
+let angleMode = "deg"; // deg | rad | grad
+let showingFraction = false;
+let justEvaluated = false;
+let history = [];
+// When a function like sin() is inserted with both parens auto-added,
+// this holds the string index sitting just before the ")" — so the next
+// digit you type lands inside the parens instead of after them. It's a
+// plain number, not a DOM cursor, so it can't corrupt anything the way
+// the old contenteditable-cursor approach did. Any action other than
+// typing a digit clears it.
+let pendingInsertAt = null;
+try{
+  const saved = JSON.parse(localStorage.getItem("fx-calc-history") || "[]");
+  if (Array.isArray(saved)) history = saved;
+} catch(e){ /* corrupted or unavailable storage — start fresh */ }
+
+function saveHistory(){
+  try{ localStorage.setItem("fx-calc-history", JSON.stringify(history)); }
+  catch(e){ /* storage full or unavailable — history just won't persist */ }
+}
+
+const themeBtn = document.getElementById("themeBtn");
+const themeIcon = document.getElementById("themeIcon");
+const themeColorMeta = document.getElementById("themeColorMeta");
+const SUN_PATH = '<circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="4" y1="12" x2="2" y2="12"></line><line x1="22" y1="12" x2="20" y2="12"></line><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"></line><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"></line><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"></line><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"></line>';
+const MOON_PATH = '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path>';
+
+function applyTheme(theme){
+  document.documentElement.setAttribute("data-theme", theme);
+  themeIcon.innerHTML = theme === "light" ? MOON_PATH : SUN_PATH;
+  themeColorMeta.setAttribute("content", theme === "light" ? "#eef0f4" : "#05060a");
+}
+
+let currentTheme = "dark";
+try{ currentTheme = localStorage.getItem("fx-calc-theme") || "dark"; } catch(e){}
+applyTheme(currentTheme);
+
+themeBtn.addEventListener("click", ()=>{
+  currentTheme = currentTheme === "dark" ? "light" : "dark";
+  applyTheme(currentTheme);
+  try{ localStorage.setItem("fx-calc-theme", currentTheme); } catch(e){}
+});
+
+const currentEl = document.getElementById("current");
+const historyLine = document.getElementById("historyLine");
+const angleBtn = document.getElementById("angleBtn");
+const toastEl = document.getElementById("toast");
+const sciRows = document.getElementById("sciRows");
+const stdModeBtn = document.getElementById("stdModeBtn");
+const sciModeBtn = document.getElementById("sciModeBtn");
+const micBtn = document.getElementById("micBtn");
+
+// --- Mic FAB: draggable, remembers where you put it, dims when idle ---
+(function setupMicFab(){
+  const SAVE_KEY = "fx-calc-mic-pos";
+  const HINT_KEY = "fx-calc-mic-hint-count";
+
+  function placeDefault(){
+    // Starts between the 6/3 column and the +/- operator column.
+    // The button remains fully draggable and its saved position still wins.
+    const grid = document.querySelector(".grid");
+    if (grid){
+      const r = grid.getBoundingClientRect();
+      const left = r.left + r.width * 0.69;
+      const top = r.top + r.height * 0.46;
+      const pos = clamp({left, top});
+      micBtn.style.top = pos.top + "px";
+      micBtn.style.left = pos.left + "px";
+      return;
+    }
+    const rect = { top: 130, left: window.innerWidth - 76 };
+    micBtn.style.top = rect.top + "px";
+    micBtn.style.left = rect.left + "px";
+  }
+
+  let saved = null;
+  try{ saved = JSON.parse(localStorage.getItem(SAVE_KEY)); }catch(e){}
+  if (saved && typeof saved.top === "number" && typeof saved.left === "number"){
+    micBtn.style.top = saved.top + "px";
+    micBtn.style.left = saved.left + "px";
+  } else {
+    placeDefault();
+  }
+
+  function clamp(pos){
+    const size = 60;
+    const maxLeft = window.innerWidth - size - 4;
+    const maxTop = window.innerHeight - size - 4;
+    return {
+      left: Math.min(Math.max(4, pos.left), maxLeft),
+      top: Math.min(Math.max(4, pos.top), maxTop)
+    };
+  }
+
+  let dragging = false, moved = false, startX, startY, startLeft, startTop;
+
+  micBtn.addEventListener("pointerdown", (e)=>{
+    dragging = true; moved = false;
+    startX = e.clientX; startY = e.clientY;
+    const r = micBtn.getBoundingClientRect();
+    startLeft = r.left; startTop = r.top;
+    micBtn.classList.add("dragging");
+    micBtn.setPointerCapture(e.pointerId);
+    resetIdleTimer();
+  });
+
+  micBtn.addEventListener("pointermove", (e)=>{
+    if (!dragging) return;
+    const dx = e.clientX - startX, dy = e.clientY - startY;
+    if (Math.abs(dx) > 6 || Math.abs(dy) > 6) moved = true;
+    if (!moved) return;
+    const pos = clamp({ left: startLeft + dx, top: startTop + dy });
+    micBtn.style.left = pos.left + "px";
+    micBtn.style.top = pos.top + "px";
+  });
+
+  micBtn.addEventListener("pointerup", (e)=>{
+    dragging = false;
+    micBtn.classList.remove("dragging");
+    if (moved){
+      const pos = clamp({ left: parseFloat(micBtn.style.left), top: parseFloat(micBtn.style.top) });
+      try{ localStorage.setItem(SAVE_KEY, JSON.stringify(pos)); }catch(e){}
+    }
+    resetIdleTimer();
+  });
+
+  // Idle dimming: fades after a few seconds of no interaction, and
+  // brightens instantly the moment you touch or use it.
+  let idleTimer = null;
+  function resetIdleTimer(){
+    micBtn.classList.remove("idle");
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(()=> micBtn.classList.add("idle"), 4000);
+  }
+  resetIdleTimer();
+
+  // One-time-ish hint for the first few uses so people discover the drag.
+  let hintCount = 0;
+  try{ hintCount = parseInt(localStorage.getItem(HINT_KEY) || "0", 10); }catch(e){}
+  if (hintCount < 3){
+    setTimeout(()=> toast("Tip: press and hold the mic, then drag it anywhere"), 900);
+    try{ localStorage.setItem(HINT_KEY, String(hintCount + 1)); }catch(e){}
+  }
+
+  // Expose so the click handler below can ignore taps that were actually drags.
+  window.__micWasDragged = () => moved;
+})();
+
+const historyBtn = document.getElementById("historyBtn");
+const historyOverlay = document.getElementById("historyOverlay");
+const historyList = document.getElementById("historyList");
+const closeHistoryBtn = document.getElementById("closeHistoryBtn");
+const clearHistoryBtn = document.getElementById("clearHistoryBtn");
+
+// Simple, robust append-only editing model. Everything mutates `expr`
+// directly; the display is just a mirror of it. This replaces an
+// earlier execCommand-based cursor-insertion approach that could
+// silently corrupt the string on fast taps — not worth the risk for
+// the "edit mid-expression" convenience it bought.
+function updateDisplay(){
+  currentEl.textContent = expr;
+  fitDisplayFont();
+  currentEl.scrollLeft = currentEl.scrollWidth; // fallback for anything still too long to fit
+}
+
+// Auto-shrinks the display text as it gets longer, instead of relying
+// purely on horizontal scroll (which hides the earlier digits from view —
+// not "showing the full number" the way shrinking it does).
+function fitDisplayFont(){
+  const len = expr.length;
+  let size;
+  if (len <= 9) size = "";               // let the CSS clamp() handle normal-length numbers
+  else if (len <= 12) size = "34px";
+  else if (len <= 16) size = "27px";
+  else if (len <= 20) size = "22px";
+  else size = "18px";
+  currentEl.style.fontSize = size;
+}
+
+function insertAtCaret(str){
+  pendingInsertAt = null; // any non-digit action cancels the "type inside the parens" mode
+  expr = expr + str;
+  updateDisplay();
+}
+
+// Digits and the decimal point go here — this is the ONLY thing that
+// respects pendingInsertAt, so "sin(|)" + "8" becomes "sin(8)" with the
+// cursor concept staying inside the parens for further digits.
+function insertDigit(d){
+  if (justEvaluated){ expr=""; justEvaluated=false; pendingInsertAt=null; }
+  if (pendingInsertAt !== null){
+    expr = expr.slice(0, pendingInsertAt) + d + expr.slice(pendingInsertAt);
+    pendingInsertAt += d.length;
+  } else {
+    expr = expr + d;
+  }
+  updateDisplay();
+}
+
+function setDisplay(text){
+  pendingInsertAt = null;
+  expr = text;
+  updateDisplay();
+}
+
+currentEl.addEventListener("input", ()=>{
+  // Defensive: this display isn't meant to be typed into directly (an
+  // external keyboard could still send keystrokes here) — snap it back
+  // to the canonical `expr` string instead of trusting arbitrary DOM edits.
+  updateDisplay();
+});
+
+currentEl.addEventListener("paste", (e)=>{
+  e.preventDefault();
+  const text = (e.clipboardData || window.clipboardData).getData("text/plain");
+  let toInsert = text;
+  if (text.includes("=")) toInsert = text.slice(text.lastIndexOf("=") + 1);
+  toInsert = toInsert.replace(/[^0-9+\-*/.^()]/g, "").trim();
+  if (toInsert === ""){ toast("Nothing usable in that paste"); return; }
+  if (justEvaluated){ expr=""; justEvaluated=false; }
+  insertAtCaret(toInsert);
+});
+
+function insertFunction(name){
+  if (justEvaluated){ expr=""; justEvaluated=false; }
+  expr = expr + name + "()";
+  pendingInsertAt = expr.length - 1; // sit just before the ")" we just added
+  updateDisplay();
+}
+
+// Postfix operators (x², x⁻¹, x!) apply AFTER a number, matching real notation.
+function insertPostfix(symbol){
+  justEvaluated = false;
+  if (expr === "" && lastResult !== null){ setDisplay(String(lastResult)); }
+  if (expr === ""){ toast("Enter a number first"); return; }
+  insertAtCaret(symbol);
+}
+
+// nCr / nPr / ^ are infix — they sit between two typed numbers, like +, -, ×, ÷.
+function insertInfix(token){
+  if (expr === "" && lastResult !== null){ setDisplay(String(lastResult)); }
+  justEvaluated = false;
+  insertAtCaret(token);
+}
+
+function toast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=> toastEl.classList.remove("show"), 1900);
+}
+
+function decimalToFraction(value){
+  if (Number.isInteger(value)) return String(value);
+  const sign = value < 0 ? "-" : "";
+  value = Math.abs(value);
+  const tolerance = 1e-9;
+  const MAX_DENOMINATOR = 10000;
+  let h1=1, h2=0, k1=0, k2=1, b=value;
+  do{
+    const a = Math.floor(b);
+    let aux = h1; h1 = a*h1+h2; h2 = aux;
+    aux = k1; k1 = a*k1+k2; k2 = aux;
+    b = 1/(b-a);
+  } while (Math.abs(value - h1/k1) > value*tolerance && k1 < MAX_DENOMINATOR);
+  return sign + h1 + "/" + k1;
+}
+
+// --- Real recursive-descent parser + AST evaluator ---
+// Precedence (loosest to tightest): additive < multiplicative/nCr/nPr
+// < unary(-,+) < power(^) < postfix(!,²,⁻¹) < primary.
+// Unary sits ABOVE postfix so "-5!" evaluates as -(5!) = -120,
+// matching standard convention, not (-5)! which would error.
+class MathEngine{
+  constructor(){ this.angleMode = "deg"; }
+  setAngleMode(mode){ this.angleMode = mode; }
+  toRad(x){
+    if (this.angleMode === "deg") return x * Math.PI / 180;
+    if (this.angleMode === "grad") return x * Math.PI / 200;
+    return x;
+  }
+  factorial(n){
+    if (!Number.isInteger(n) || n < 0) throw new Error("Factorial needs a whole, non-negative number");
+    if (n > 170) throw new Error("That number is too large");
+    let r = 1;
+    for (let i = 2; i <= n; i++) r *= i;
+    return r;
+  }
+  nCr(n,r){
+    if (!Number.isInteger(n) || !Number.isInteger(r)) throw new Error("nCr needs whole numbers");
+    if (r>n || r<0 || n<0) throw new Error("nCr needs 0 \u2264 r \u2264 n");
+    r = Math.min(r, n-r);
+    let result = 1;
+    for (let i=1; i<=r; i++) result = result * (n-r+i) / i;
+    return Math.round(result);
+  }
+  nPr(n,r){
+    if (!Number.isInteger(n) || !Number.isInteger(r)) throw new Error("nPr needs whole numbers");
+    if (r>n || r<0 || n<0) throw new Error("nPr needs 0 \u2264 r \u2264 n");
+    let result = 1;
+    for (let i=0; i<r; i++) result *= (n-i);
+    return result;
+  }
+
+  tokenize(s){
+    const tokens = [];
+    let i = 0;
+    const idents = ["sin","cos","tan","log","ln","logb","nCr","nPr"];
+    while (i < s.length){
+      const ch = s[i];
+      if (ch === "\u03c0"){
+        tokens.push({ t:"NUM", v: Math.PI });
+        i++;
+        continue;
+      }
+      if (/[0-9.]/.test(ch)){
+        let num = "";
+        while (i < s.length && /[0-9.]/.test(s[i])){ num += s[i]; i++; }
+        tokens.push({ t:"NUM", v: parseFloat(num) });
+        continue;
+      }
+      if (/[a-zA-Z]/.test(ch)){
+        let word = "";
+        while (i < s.length && /[a-zA-Z]/.test(s[i])){ word += s[i]; i++; }
+        if (!idents.includes(word)) throw new Error("Unrecognized: " + word);
+        tokens.push({ t:"IDENT", v: word });
+        continue;
+      }
+      // x⁻¹ is two separate Unicode code points (⁻ and ¹) that must be
+      // read together as one reciprocal symbol, not two operators.
+      if (s.slice(i, i+2) === "\u207b\u00b9"){
+        tokens.push({ t:"OP", v: "\u207b\u00b9" });
+        i += 2;
+        continue;
+      }
+      if ("+-*/^!\u00b2\u221a(),".includes(ch)){
+        tokens.push({ t:"OP", v: ch });
+        i++;
+        continue;
+      }
+      throw new Error("Unexpected character: " + ch);
+    }
+    return tokens;
+  }
+
+  parse(tokens){
+    let pos = 0;
+    const peek = () => tokens[pos];
+    const isOp = (v) => peek() && peek().t === "OP" && peek().v === v;
+    const eat = (v) => {
+      if (v !== undefined && !isOp(v)) throw new Error("Expected '" + v + "'");
+      return tokens[pos++];
+    };
+
+    const parseAdditive = () => {
+      let left = parseMultiplicative();
+      while (isOp("+") || isOp("-")){
+        const op = eat().v;
+        left = { t:"BIN", op, l:left, r:parseMultiplicative() };
+      }
+      return left;
+    };
+    const parseMultiplicative = () => {
+      let left = parseUnary();
+      while (isOp("*") || isOp("/") ||
+             (peek() && peek().t==="IDENT" && (peek().v==="nCr"||peek().v==="nPr"))){
+        const op = eat().v;
+        left = { t:"BIN", op, l:left, r:parseUnary() };
+      }
+      return left;
+    };
+    const parseUnary = () => {
+      if (isOp("-") || isOp("+")){
+        const op = eat().v;
+        return { t:"UNARY", op, operand: parseUnary() };
+      }
+      return parsePower();
+    };
+    const parsePower = () => {
+      const left = parsePostfix();
+      if (isOp("^")){
+        eat();
+        return { t:"BIN", op:"^", l:left, r:parsePower() }; // right-assoc
+      }
+      return left;
+    };
+    const parsePostfix = () => {
+      let node = parsePrimary();
+      while (isOp("!") || isOp("\u00b2") || isOp("\u207b\u00b9")){
+        const op = eat().v;
+        node = { t:"POSTFIX", op, operand: node };
+      }
+      return node;
+    };
+    const parsePrimary = () => {
+      const tok = peek();
+      if (!tok) throw new Error("Incomplete expression");
+      if (tok.t === "NUM"){ eat(); return { t:"LIT", v: tok.v }; }
+      if (isOp("\u221a")){ eat(); return { t:"FN", name:"sqrt", arg:parsePrimary() }; }
+      if (isOp("(")){
+        eat("(");
+        const inner = parseAdditive();
+        eat(")");
+        return inner;
+      }
+      if (tok.t === "IDENT" && ["sin","cos","tan","log","ln","logb"].includes(tok.v)){
+        const fnName = tok.v;
+        eat();
+        eat("(");
+        const arg = parseAdditive();
+        if (fnName === "logb") {
+          eat(",");
+          const base = parseAdditive();
+          eat(")");
+          return { t:"FN", name:"logb", arg, base };
+        }
+        eat(")");
+        return { t:"FN", name: fnName, arg };
+      }
+      throw new Error("Unexpected token near '" + tok.v + "'");
+    };
+
+    const ast = parseAdditive();
+    if (pos < tokens.length) throw new Error("Extra input after expression");
+    return ast;
+  }
+
+  evalNode(node){
+    switch(node.t){
+      case "LIT": return node.v;
+      case "UNARY": {
+        const v = this.evalNode(node.operand);
+        return node.op === "-" ? -v : v;
+      }
+      case "POSTFIX": {
+        const v = this.evalNode(node.operand);
+        if (node.op === "!") return this.factorial(v);
+        if (node.op === "\u00b2") return v*v;
+        if (node.op === "\u207b\u00b9"){
+          if (v === 0) throw new Error("Can't divide by zero");
+          return 1/v;
+        }
+        break;
+      }
+      case "BIN": {
+        const l = this.evalNode(node.l), r = this.evalNode(node.r);
+        switch(node.op){
+          case "+": return l+r;
+          case "-": return l-r;
+          case "*": return l*r;
+          case "/": if (r===0) throw new Error("Can't divide by zero"); return l/r;
+          case "^": return Math.pow(l,r);
+          case "nCr": return this.nCr(l,r);
+          case "nPr": return this.nPr(l,r);
+        }
+        break;
+      }
+      case "FN": {
+        const v = this.evalNode(node.arg);
+        switch(node.name){
+          case "sin": return Math.sin(this.toRad(v));
+          case "cos": return Math.cos(this.toRad(v));
+          case "tan": return Math.tan(this.toRad(v));
+          case "log": if (v<=0) throw new Error("log needs a positive number"); return Math.log10(v);
+          case "logb": { const base = this.evalNode(node.base); if (v<=0 || base<=0 || base===1) throw new Error("Invalid logarithm base"); return Math.log(v)/Math.log(base); }
+          case "ln":  if (v<=0) throw new Error("ln needs a positive number"); return Math.log(v);
+          case "sqrt": if (v<0) throw new Error("Can't take \u221a of a negative number"); return Math.sqrt(v);
+        }
+        break;
+      }
+    }
+    throw new Error("Could not evaluate");
+  }
+
+  evaluate(exprStr){
+    const tokens = this.tokenize(exprStr);
+    if (tokens.length === 0) throw new Error("Nothing to evaluate");
+    const ast = this.parse(tokens);
+    return this.evalNode(ast);
+  }
+}
+
+const engine = new MathEngine();
+
+document.querySelectorAll("[data-num]").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    const val = btn.dataset.num;
+    if (val === "(" || val === ")"){
+      // manual paren entry — the user is taking over bracket placement themselves
+      insertAtCaret(val);
+    } else {
+      insertDigit(val);
+    }
+  });
+});
+
+document.querySelectorAll("[data-op]").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    if (expr === "" && lastResult !== null){ setDisplay(String(lastResult)); }
+    justEvaluated = false;
+    insertAtCaret(btn.dataset.op);
+  });
+});
+
+const gridEl = document.querySelector(".grid");
+const convPanel = document.getElementById("convPanel");
+const convModeBtn = document.getElementById("convModeBtn");
+
+function showStdSciUI(){
+  gridEl.classList.remove("hidden");
+  convPanel.classList.add("hidden");
+  document.getElementById("constPanel").classList.add("hidden");
+  document.getElementById("eqnPanel").classList.add("hidden");
+}
+function showConvUI(){
+  gridEl.classList.add("hidden");
+  sciRows.classList.add("hidden");
+  convPanel.classList.remove("hidden");
+  document.getElementById("constPanel").classList.add("hidden");
+  document.getElementById("eqnPanel").classList.add("hidden");
+}
+
+stdModeBtn.addEventListener("click", ()=>{
+  sciRows.classList.add("hidden");
+  showStdSciUI();
+  stdModeBtn.classList.add("active");
+  sciModeBtn.classList.remove("active");
+  convModeBtn.classList.remove("active");
+});
+
+sciModeBtn.addEventListener("click", ()=>{
+  sciRows.classList.remove("hidden");
+  showStdSciUI();
+  sciModeBtn.classList.add("active");
+  stdModeBtn.classList.remove("active");
+  convModeBtn.classList.remove("active");
+});
+
+convModeBtn.addEventListener("click", ()=>{
+  showConvUI();
+  convModeBtn.classList.add("active");
+  stdModeBtn.classList.remove("active");
+  sciModeBtn.classList.remove("active");
+});
+
+// --- Unit converter: pure offline math only. Currency/Finance/Date/Discount
+// are deliberately NOT here — those need live external data, which is a
+// different kind of feature than a fixed conversion factor table.
+const CONV_CATEGORIES = {
+  Length: { base:"m", units:{
+    m:1, km:1000, cm:0.01, mm:0.001, mi:1609.344, yd:0.9144, ft:0.3048, in:0.0254
+  }},
+  Mass: { base:"kg", units:{
+    kg:1, g:0.001, mg:0.000001, t:1000, lb:0.45359237, oz:0.0283495231
+  }},
+  Area: { base:"m\u00b2", units:{
+    "m\u00b2":1, "km\u00b2":1000000, "cm\u00b2":0.0001, "ft\u00b2":0.09290304,
+    "yd\u00b2":0.83612736, acre:4046.8564224, hectare:10000
+  }},
+  Volume: { base:"L", units:{
+    L:1, mL:0.001, "m\u00b3":1000, gal:3.785411784, qt:0.946352946,
+    pt:0.473176473, cup:0.2365882365, "fl oz":0.0295735295625
+  }},
+  Time: { base:"s", units:{
+    ms:0.001, s:1, min:60, hr:3600, day:86400, week:604800
+  }},
+  Speed: { base:"m/s", units:{
+    "m/s":1, "km/h":0.2777778, mph:0.44704, knot:0.5144444, "ft/s":0.3048
+  }},
+  Data: { base:"byte", units:{
+    bit:0.125, byte:1, KB:1024, MB:1048576, GB:1073741824, TB:1099511627776
+  }},
+  Temperature: { special:"temperature", units:{ "\u00b0C":"c", "\u00b0F":"f", K:"k" } },
+  "Numeral System": { special:"base", units:{ Binary:2, Octal:8, Decimal:10, Hex:16 } },
+};
+
+let convCategory = "Length";
+let convFromUnit = "m";
+let convToUnit = "ft";
+
+const convCategoriesEl = document.getElementById("convCategories");
+const convFromInput = document.getElementById("convFromInput");
+const convFromUnitEl = document.getElementById("convFromUnit");
+const convToUnitEl = document.getElementById("convToUnit");
+const convResultEl = document.getElementById("convResult");
+const convSwapBtn = document.getElementById("convSwapBtn");
+
+function renderConvCategories(){
+  convCategoriesEl.innerHTML = "";
+  Object.keys(CONV_CATEGORIES).forEach(cat=>{
+    const chip = document.createElement("button");
+    chip.className = "conv-chip" + (cat === convCategory ? " active" : "");
+    chip.textContent = cat;
+    chip.addEventListener("click", ()=>{
+      convCategory = cat;
+      const units = Object.keys(CONV_CATEGORIES[cat].units);
+      convFromUnit = units[0];
+      convToUnit = units[1] || units[0];
+      renderConvCategories();
+      renderConvUnitSelects();
+      runConversion();
+    });
+    convCategoriesEl.appendChild(chip);
+  });
+}
+
+function renderConvUnitSelects(){
+  const units = Object.keys(CONV_CATEGORIES[convCategory].units);
+  convFromUnitEl.innerHTML = units.map(u => `<option value="${u}"${u===convFromUnit?" selected":""}>${u}</option>`).join("");
+  convToUnitEl.innerHTML = units.map(u => `<option value="${u}"${u===convToUnit?" selected":""}>${u}</option>`).join("");
+}
+
+function convertValue(value, category, fromUnit, toUnit){
+  const cat = CONV_CATEGORIES[category];
+  if (cat.special === "temperature"){
+    const f = cat.units[fromUnit], t = cat.units[toUnit];
+    let c;
+    if (f === "c") c = value;
+    else if (f === "f") c = (value - 32) * 5/9;
+    else c = value - 273.15;
+    if (t === "c") return c;
+    if (t === "f") return c * 9/5 + 32;
+    return c + 273.15;
+  }
+  if (cat.special === "base"){
+    const fromBase = cat.units[fromUnit], toBase = cat.units[toUnit];
+    const intVal = parseInt(String(value).trim(), fromBase);
+    if (isNaN(intVal)) throw new Error("bad value for that base");
+    return intVal.toString(toBase).toUpperCase();
+  }
+  const factorFrom = cat.units[fromUnit], factorTo = cat.units[toUnit];
+  return (value * factorFrom) / factorTo;
+}
+
+function runConversion(){
+  const raw = convFromInput.value.trim();
+  try{
+    const cat = CONV_CATEGORIES[convCategory];
+    const inputVal = cat.special === "base" ? raw : parseFloat(raw);
+    if (cat.special !== "base" && (raw === "" || isNaN(inputVal))){
+      convResultEl.textContent = "\u2014";
+      return;
+    }
+    const result = convertValue(inputVal, convCategory, convFromUnit, convToUnit);
+    convResultEl.textContent = typeof result === "number"
+      ? (Math.round(result * 1e8) / 1e8).toString()
+      : result;
+  } catch(e){
+    convResultEl.textContent = "\u2014";
+  }
+}
+
+convFromInput.addEventListener("input", runConversion);
+convFromUnitEl.addEventListener("change", ()=>{ convFromUnit = convFromUnitEl.value; runConversion(); });
+convToUnitEl.addEventListener("change", ()=>{ convToUnit = convToUnitEl.value; runConversion(); });
+convSwapBtn.addEventListener("click", ()=>{
+  [convFromUnit, convToUnit] = [convToUnit, convFromUnit];
+  renderConvUnitSelects();
+  runConversion();
+});
+
+renderConvCategories();
+renderConvUnitSelects();
+runConversion();
+
+angleBtn.addEventListener("click", ()=>{
+  angleMode = angleMode === "deg" ? "rad" : angleMode === "rad" ? "grad" : "deg";
+  engine.setAngleMode(angleMode);
+  angleBtn.textContent = angleMode.toUpperCase();
+  toast(angleMode.toUpperCase() + " mode");
+});
+
+document.querySelectorAll("[data-act]").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    const act = btn.dataset.act;
+    if (act === "clear"){
+      expr=""; lastResult=null; pendingInsertAt=null; updateDisplay();
+      historyLine.textContent="\u00a0"; showingFraction=false; justEvaluated=false;
+      return;
+    }
+    if (act === "back"){
+      justEvaluated=false;
+      if (pendingInsertAt !== null && pendingInsertAt > 0){
+        // delete the character just before the tracked insert point,
+        // i.e. inside the parens, not the ")" itself
+        expr = expr.slice(0, pendingInsertAt - 1) + expr.slice(pendingInsertAt);
+        pendingInsertAt -= 1;
+      } else {
+        pendingInsertAt = null;
+        expr = expr.slice(0, -1);
+      }
+      updateDisplay();
+      return;
+    }
+    if (act === "percent"){
+      if (justEvaluated){ expr=""; justEvaluated=false; }
+      handlePercent();
+      return;
+    }
+    if (act === "pow"){ insertInfix("^"); return; }
+    if (["sin","cos","tan","log","ln"].includes(act)){ insertFunction(act); return; }
+    if (act === "sqrt"){ insertFunction("\u221a"); return; }
+    if (act === "sq"){ insertPostfix("\u00b2"); return; }
+    if (act === "recip"){ insertPostfix("\u207b\u00b9"); return; }
+    if (act === "fact"){ insertPostfix("!"); return; }
+    if (act === "ncr"){ insertInfix("nCr"); return; }
+    if (act === "npr"){ insertInfix("nPr"); return; }
+    if (act === "s2d"){ toggleFraction(); return; }
+    if (act === "equals"){ evaluate(); return; }
+  });
+});
+
+// Contextual percent: "200+10%" behaves like a real calculator (=220),
+// not raw math (which would give 200.1). Only applies for a trailing
+// +/- against a base; for *, /, or a bare number, % is plain /100 —
+// that matches what every physical calculator actually does.
+function handlePercent(){
+  const m = expr.match(/^(.*[)0-9])([+\-])(\d+(\.\d+)?)$/);
+  if (m){
+    const basePart = m[1], op = m[2], numStr = m[3];
+    try{
+      const baseVal = engine.evaluate(basePart);
+      const pctVal = (Number(numStr) / 100) * baseVal;
+      setDisplay(basePart + op + "(" + pctVal + ")");
+      return;
+    } catch(e){ /* fall through to plain percent below */ }
+  }
+  insertAtCaret("/100");
+}
+
+function toggleFraction(){
+  if (lastResult === null){ toast("Calculate something first"); return; }
+  if (!showingFraction){
+    currentEl.textContent = decimalToFraction(lastResult);
+    showingFraction = true;
+  } else {
+    currentEl.textContent = expr;
+    showingFraction = false;
+  }
+}
+
+function evaluate(){
+  if (expr.trim() === ""){ return; }
+  try{
+    const result = engine.evaluate(expr);
+    if (typeof result !== "number" || !isFinite(result)){
+      throw new Error("That's not a valid result");
+    }
+
+    const rounded = Math.round(result * 1e10) / 1e10;
+    historyLine.textContent = expr + " =";
+    history.unshift({ expr: expr, result: rounded });
+    if (history.length > 20) history.pop();
+    saveHistory();
+
+    lastResult = rounded;
+    showingFraction = false;
+    justEvaluated = true;
+    setDisplay(String(rounded));
+  } catch(e){
+    toast(e.message || "Can't evaluate that");
+  }
+}
+
+function renderHistory(){
+  historyList.innerHTML = "";
+  if (history.length === 0){
+    const empty = document.createElement("div");
+    empty.className = "history-empty";
+    empty.textContent = "No calculations yet";
+    historyList.appendChild(empty);
+    return;
+  }
+  history.forEach(item=>{
+    const el = document.createElement("div");
+    el.className = "history-item";
+    const exprEl = document.createElement("div");
+    exprEl.className = "h-expr";
+    exprEl.textContent = item.expr + " =";
+    const resEl = document.createElement("div");
+    resEl.className = "h-result";
+    resEl.textContent = item.result;
+    el.appendChild(exprEl);
+    el.appendChild(resEl);
+    el.addEventListener("click", ()=>{
+      // Recalling a past answer replaces what's on screen — it shouldn't
+      // glue onto whatever was already there (that was the bug: tapping
+      // "12" while "93" was still showing produced "9312").
+      setDisplay(String(item.result));
+      lastResult = item.result;
+      justEvaluated = true;
+      closeHistory();
+    });
+    historyList.appendChild(el);
+  });
+}
+
+function openHistory(){ renderHistory(); historyOverlay.classList.add("open"); }
+function closeHistory(){ historyOverlay.classList.remove("open"); }
+
+historyBtn.addEventListener("click", openHistory);
+closeHistoryBtn.addEventListener("click", closeHistory);
+historyOverlay.addEventListener("click", (e)=>{ if (e.target === historyOverlay) closeHistory(); });
+clearHistoryBtn.addEventListener("click", ()=>{ history = []; saveHistory(); renderHistory(); });
+
+// (Editing is append-only and fully controlled in JS — see updateDisplay above.
+// This just adds keyboard convenience if the user has one connected.)
+window.addEventListener("keydown", (e)=>{
+  if (e.key === "Enter"){ evaluate(); }
+  else if (e.key === "Escape"){ expr=""; updateDisplay(); }
+});
+
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognizing = false;
+let recognizer = null;
+
+if (SpeechRec){
+  recognizer = new SpeechRec();
+  recognizer.lang = "en-US";
+  recognizer.interimResults = true;
+  recognizer.maxAlternatives = 1;
+
+  recognizer.onstart = ()=>{ recognizing = true; micBtn.classList.add("listening"); };
+  recognizer.onend = ()=>{ recognizing = false; micBtn.classList.remove("listening"); };
+  recognizer.onerror = (e)=>{
+    recognizing = false;
+    micBtn.classList.remove("listening");
+    if (e.error === "no-speech") toast("Didn't hear anything \u2014 try again");
+    else toast("Voice error: " + e.error);
+  };
+  recognizer.onresult = (event)=>{
+    const res = event.results[event.results.length - 1];
+    const transcript = res[0].transcript.toLowerCase();
+
+    if (!res.isFinal){
+      // live feedback while still speaking
+      currentEl.textContent = transcript;
+      return;
+    }
+
+    if (handleVoiceCommand(transcript)) return;
+
+    const parsed = parseSpokenMath(transcript);
+    if (parsed === null){
+      toast('Heard: "' + transcript + '" \u2014 could not turn that into a calculation');
+      setDisplay(expr); // restore whatever was there before
+      return;
+    }
+    toast('Heard: "' + transcript + '"');
+    // If you say something like "divided by 5" right after getting an
+    // answer, that's a continuation of the last result — same as tapping
+    // an operator key with an empty display. Without this, "divided by 5"
+    // parses to the bare fragment "/5", which has no left-hand side and
+    // throws "Unexpected token near '/'".
+    const continuesFromAnswer = /^[+\-*/^]/.test(parsed) && lastResult !== null;
+    setDisplay(continuesFromAnswer ? String(lastResult) + parsed : parsed);
+    evaluate();
+  };
+
+  micBtn.addEventListener("click", ()=>{
+    if (window.__micWasDragged && window.__micWasDragged()) return;
+    if (recognizing){ recognizer.stop(); return; }
+    try{ recognizer.start(); } catch(e){}
+  });
+} else {
+  micBtn.addEventListener("click", ()=>{
+    if (window.__micWasDragged && window.__micWasDragged()) return;
+    toast("Voice input not supported in this browser");
+  });
+}
+
+// Voice commands for controlling the app itself, not just dictating math.
+// Checked before math parsing so "clear everything" doesn't get treated
+// as a failed calculation.
+function handleVoiceCommand(text){
+  const t = text.trim().toLowerCase();
+
+  if (/\b(clear everything|clear the screen|clear screen|clear all|reset everything|^clear$)\b/.test(t)){
+    document.querySelector('[data-act="clear"]').click();
+    toast("Cleared");
+    return true;
+  }
+  if (/\b(delete|backspace|remove last)\b/.test(t)){
+    document.querySelector('[data-act="back"]').click();
+    return true;
+  }
+  if (/\b(light mode|switch to light|turn on light mode)\b/.test(t)){
+    if (currentTheme !== "light"){ currentTheme = "light"; applyTheme("light"); try{ localStorage.setItem("fx-calc-theme","light"); }catch(e){} }
+    toast("Light mode");
+    return true;
+  }
+  if (/\b(dark mode|switch to dark|turn on dark mode)\b/.test(t)){
+    if (currentTheme !== "dark"){ currentTheme = "dark"; applyTheme("dark"); try{ localStorage.setItem("fx-calc-theme","dark"); }catch(e){} }
+    toast("Dark mode");
+    return true;
+  }
+  if (/\b(scientific mode|switch to scientific|switch to science|engineering mode|switch to engineering)\b/.test(t)){
+    sciModeBtn.click();
+    toast("Scientific mode");
+    return true;
+  }
+  if (/\b(basic mode|standard mode|switch to basic|switch to standard)\b/.test(t)){
+    stdModeBtn.click();
+    toast("Standard mode");
+    return true;
+  }
+  if (/\b(open history|show history|view history)\b/.test(t)){
+    openHistory();
+    return true;
+  }
+  if (/\b(close history|hide history)\b/.test(t)){
+    closeHistory();
+    return true;
+  }
+  if (/\bconvert to fraction\b|\bshow (as )?a? ?fraction\b/.test(t)){
+    if (lastResult === null){ toast("Calculate something first"); return true; }
+    currentEl.textContent = decimalToFraction(lastResult);
+    showingFraction = true;
+    toast("Fraction");
+    return true;
+  }
+  if (/\bconvert to decimal\b|\bshow (as )?a? ?decimal\b/.test(t)){
+    if (lastResult === null){ toast("Calculate something first"); return true; }
+    updateDisplay();
+    showingFraction = false;
+    toast("Decimal");
+    return true;
+  }
+
+  // Reference searches and common spoken reference requests.
+  const constMatch = t.match(/(?:constant|value) (?:of )?(gravity|gravitational constant|speed of light|planck|electron mass|proton mass|neutron mass|avogadro|boltzmann)/);
+  if (/\b(show|open|search) (?:the )?(?:constants|constant)\b/.test(t) || constMatch){
+    constModeBtn.click();
+    const q = constMatch ? constMatch[1] : t.replace(/.*(?:constants|constant)\s*/, "").trim();
+    constSearch.value = q; renderConstants();
+    toast(q ? "Constant: " + q : "Constants");
+    return true;
+  }
+  const eqnMatch = t.match(/(?:equation|formula|formulas?) (?:for )?(.+)/);
+  if (/\b(show|open|search) (?:the )?(?:equations|formulas?)\b/.test(t) || eqnMatch){
+    eqnModeBtn.click();
+    const q = eqnMatch ? eqnMatch[1] : t.replace(/.*(?:equations|formulas?)\s*/, "").trim();
+    eqnSearch.value = q; renderEquations();
+    toast(q ? "Equation: " + q : "Equations");
+    return true;
+  }
+
+  // "convert 20 feet to meters" style unit conversion
+  const convMatch = t.match(/convert\s+([\d.]+)\s*([a-z\u00b0\/]+)\s+to\s+([a-z\u00b0\/]+)/i);
+  if (convMatch){
+    const UNIT_ALIASES = {
+      meter:"m", meters:"m", metre:"m", metres:"m",
+      kilometer:"km", kilometers:"km", centimeter:"cm", centimeters:"cm",
+      millimeter:"mm", millimeters:"mm", mile:"mi", miles:"mi",
+      yard:"yd", yards:"yd", foot:"ft", feet:"ft", inch:"in", inches:"in",
+      kilogram:"kg", kilograms:"kg", gram:"g", grams:"g", milligram:"mg", milligrams:"mg",
+      tonne:"t", tonnes:"t", pound:"lb", pounds:"lb", ounce:"oz", ounces:"oz",
+      liter:"L", liters:"L", litre:"L", litres:"L", milliliter:"mL", milliliters:"mL",
+      gallon:"gal", gallons:"gal", quart:"qt", quarts:"qt", pint:"pt", pints:"pt",
+      second:"s", seconds:"s", minute:"min", minutes:"min", hour:"hr", hours:"hr",
+      day:"day", days:"day", week:"week", weeks:"week",
+      byte:"byte", bytes:"byte", kilobyte:"KB", kilobytes:"KB",
+      megabyte:"MB", megabytes:"MB", gigabyte:"GB", gigabytes:"GB", terabyte:"TB", terabytes:"TB",
+      celsius:"\u00b0C", fahrenheit:"\u00b0F", kelvin:"K",
+      "m/s":"m/s", "km/h":"km/h", mph:"mph", knot:"knot", knots:"knot"
+    };
+    const normalize = (u) => {
+      const key = u.toLowerCase().trim();
+      return UNIT_ALIASES[key] || u;
+    };
+    const value = convMatch[1];
+    const fromU = normalize(convMatch[2]);
+    const toU = normalize(convMatch[3]);
+
+    const category = Object.keys(CONV_CATEGORIES).find(cat=>{
+      const units = Object.keys(CONV_CATEGORIES[cat].units);
+      return units.includes(fromU) && units.includes(toU);
+    });
+
+    if (!category){
+      toast("Don't recognize those units yet");
+      return true;
+    }
+
+    convCategory = category;
+    convFromUnit = fromU;
+    convToUnit = toU;
+    convModeBtn.click();
+    renderConvCategories();
+    renderConvUnitSelects();
+    convFromInput.value = value;
+    runConversion();
+    toast(value + " " + fromU + " = " + convResultEl.textContent + " " + toU);
+    return true;
+  }
+
+  return false;
+}
+
+function parseSpokenMath(text){
+  let t = " " + text.trim().toLowerCase() + " ";
+
+  t = t.replace(/\bplus\b|\badd\b|\badded to\b/g, " + ")
+       .replace(/\bminus\b|\bsubtract\b|\btake away\b|\bnegative\b/g, " - ")
+       .replace(/\btimes\b|\bmultiplied by\b|\bmultiply by\b|\bmultiply\b/g, " * ")
+       .replace(/\bdivided by\b|\bdivide by\b|\bover\b/g, " / ")
+       .replace(/\bto the power of\b|\braise(d)? to (the )?power( of)?\b|\bpower of\b/g, " ^ ")
+       .replace(/\bpoint\b/g, " . ")
+       .replace(/\bpercent\b/g, " /100 ")
+       .replace(/\bpi\b/g, " \u03c0 ")
+       // These now match WITH or WITHOUT "of" — "log 50" and "log of 50"
+       // both work, since real speech often drops the "of".
+       .replace(/\bsquare\s*root(\s+of)?\b/g, " \u221a( ")
+       .replace(/\bsine?(\s+of)?\b/g, " sin( ")
+       .replace(/\bcos(ine)?(\s+of)?\b/g, " cos( ")
+       .replace(/\btan(gent)?(\s+of)?\b/g, " tan( ")
+       .replace(/\bln(\s+of)?\b/g, " ln( ")
+       .replace(/\blog(\s+of)?\b/g, " log( ")
+       .replace(/\bequals\b|\bequal\b|\bwhat is\b|\bwhat's\b/g, " ");
+
+  // Combine compound number words ("eighty one" -> 81, "one hundred" -> 100,
+  // "one million" -> 1000000) properly, instead of converting each word
+  // separately and concatenating the digit strings. Also handles the
+  // common case where speech-to-text already writes part of the number as
+  // digits (e.g. "5 million" arriving as the literal token "5").
+  const NUMBER_WORDS = {
+    zero:0, one:1, two:2, three:3, four:4, five:5, six:6, seven:7, eight:8, nine:9,
+    ten:10, eleven:11, twelve:12, thirteen:13, fourteen:14, fifteen:15, sixteen:16,
+    seventeen:17, eighteen:18, nineteen:19,
+    twenty:20, thirty:30, forty:40, fifty:50, sixty:60, seventy:70, eighty:80, ninety:90
+  };
+  const SCALE_WORDS = { hundred:100, thousand:1000, million:1000000, billion:1000000000, trillion:1000000000000, quadrillion:1000000000000000, quintillion:1000000000000000000, sextillion:1000000000000000000000, septillion:1000000000000000000000000, octillion:1000000000000000000000000000, nonillion:1000000000000000000000000000000, decillion:1000000000000000000000000000000000 };
+  function wordsToNumber(words){
+    let total = 0, current = 0;
+    for (const w of words){
+      if (w === "and") continue;
+      if (/^\d+$/.test(w)){ current += parseInt(w, 10); continue; }
+      if (w === "hundred"){ current = (current === 0 ? 1 : current) * 100; continue; }
+      if (w in SCALE_WORDS && w !== "hundred"){
+        total += (current === 0 ? 1 : current) * SCALE_WORDS[w];
+        current = 0;
+        continue;
+      }
+      const val = NUMBER_WORDS[w];
+      if (val !== undefined) current += val;
+    }
+    return total + current;
+  }
+
+  const logBase = text.match(/\blog(?:arithm)?\s+(?:of\s+)?(.+?)\s+base\s+(.+?)\s*$/i);
+  if (logBase){
+    const a = wordsToNumber(logBase[1].trim().split(/\s+/));
+    const b = wordsToNumber(logBase[2].trim().split(/\s+/));
+    if (isFinite(a) && isFinite(b)) return "logb(" + a + "," + b + ")";
+  }
+
+  // Simple spoken word problems: basic total, difference, product and quotient patterns.
+  const wp = text.trim().toLowerCase();
+  const nums = wp.match(/\b(?:\d+(?:\.\d+)?|zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|million|billion|trillion|quadrillion|quintillion|sextillion|septillion|octillion|nonillion|decillion)\b/g);
+  if (nums && nums.length === 2){
+    const n1 = wordsToNumber(nums[0].split(/\s+/)), n2 = wordsToNumber(nums[1].split(/\s+/));
+    if (/(how many|total|altogether|in total|combined|together)/.test(wp) && /\b(and|plus|added)\b/.test(wp)) return String(n1+n2);
+    if (/(left|remain|remaining|difference|fewer|less)/.test(wp)) return String(n1-n2);
+    if (/(each|times|multiplied|groups)/.test(wp)) return String(n1*n2);
+    if (/(shared|split|divided|per person)/.test(wp)) return String(n1/n2);
+  }
+
+  const tokens = t.split(/\s+/).filter(Boolean);
+  const isNumberWord = (w) => w in NUMBER_WORDS || w in SCALE_WORDS || w === "and" || /^\d+$/.test(w);
+  const out = [];
+  let run = [];
+  for (const tok of tokens){
+    if (isNumberWord(tok)){
+      run.push(tok);
+    } else {
+      if (run.length){ out.push(String(wordsToNumber(run))); run = []; }
+      out.push(tok);
+    }
+  }
+  if (run.length) out.push(String(wordsToNumber(run)));
+  t = out.join("");
+
+  // "squared"/"cubed"/"factorial" apply to whatever number was just said.
+  t = t.replace(/(\d+)squared\b/g, "$1\u00b2")
+       .replace(/(\d+)cubed\b/g, "$1^3")
+       .replace(/(\d+)factorial\b/g, "$1!");
+
+  t = t.replace(/[^0-9a-z+\-*/.^()\u221a\u00b2!\u03c0]/g, "");
+
+  // Voice-inserted functions (log(, sin(, √( ...) never get a spoken
+  // "close bracket" — auto-balance any unclosed parens at the end,
+  // same courtesy the keypad buttons already give you.
+  const openCount = (t.match(/\(/g) || []).length;
+  const closeCount = (t.match(/\)/g) || []).length;
+  if (openCount > closeCount) t += ")".repeat(openCount - closeCount);
+
+  if (t === "" || !/[0-9]/.test(t)) return null;
+  return t;
+}
+
+// --- Reference library: offline constants and standard engineering/physics equations ---
+const CONSTANTS = [
+  {n:"Standard gravity",v:"9.80665 m/s²",d:"g · exact conventional value",c:"Mechanics"},
+  {n:"Gravitational constant",v:"6.67430 × 10⁻¹¹ m³ kg⁻¹ s⁻²",d:"G",c:"Mechanics"},
+  {n:"Speed of light in vacuum",v:"299792458 m/s",d:"c · exact SI value",c:"Physics"},
+  {n:"Planck constant",v:"6.62607015 × 10⁻³⁴ J·s",d:"h · exact SI value",c:"Physics"},
+  {n:"Elementary charge",v:"1.602176634 × 10⁻¹⁹ C",d:"e · exact SI value",c:"Electricity"},
+  {n:"Electron mass",v:"9.1093837139 × 10⁻³¹ kg",d:"mₑ",c:"Physics"},
+  {n:"Proton mass",v:"1.67262192595 × 10⁻²⁷ kg",d:"mₚ",c:"Physics"},
+  {n:"Neutron mass",v:"1.67492750056 × 10⁻²⁷ kg",d:"mₙ",c:"Physics"},
+  {n:"Avogadro constant",v:"6.02214076 × 10²³ mol⁻¹",d:"Nₐ · exact SI value",c:"Chemistry"},
+  {n:"Boltzmann constant",v:"1.380649 × 10⁻²³ J/K",d:"kB · exact SI value",c:"Thermal"},
+  {n:"Vacuum permittivity",v:"8.8541878188 × 10⁻¹² F/m",d:"ε₀",c:"Electricity"},
+  {n:"Vacuum permeability",v:"1.25663706127 × 10⁻⁶ N/A²",d:"μ₀ · derived SI value",c:"Electricity"}
+];
+const EQUATIONS = [
+  {n:"Newton's second law",f:"F = ma",d:"Force, mass and acceleration",c:"Mechanics"},
+  {n:"Weight",f:"W = mg",d:"Near Earth using standard gravity",c:"Mechanics"},
+  {n:"Kinetic energy",f:"KE = ½mv²",d:"Translational kinetic energy",c:"Mechanics"},
+  {n:"Gravitational potential energy",f:"PE = mgh",d:"Near Earth surface",c:"Mechanics"},
+  {n:"Momentum",f:"p = mv",d:"Linear momentum",c:"Mechanics"},
+  {n:"Ohm's law",f:"V = IR",d:"Voltage, current and resistance",c:"Electricity"},
+  {n:"Electrical power",f:"P = VI",d:"DC power relationship",c:"Electricity"},
+  {n:"Coulomb's law",f:"F = kq₁q₂/r²",d:"Electrostatic force magnitude",c:"Electricity"},
+  {n:"Wave speed",f:"v = fλ",d:"Wave speed, frequency and wavelength",c:"Waves"},
+  {n:"Ideal gas law",f:"PV = nRT",d:"Pressure, volume, amount and temperature",c:"Thermal"},
+  {n:"Heat equation",f:"Q = mcΔT",d:"Sensible heat transfer",c:"Thermal"},
+  {n:"Continuity equation",f:"A₁v₁ = A₂v₂",d:"Steady incompressible flow",c:"Fluids"},
+  {n:"Hydrostatic pressure",f:"P = ρgh",d:"Pressure due to a fluid column",c:"Fluids"},
+  {n:"Hooke's law",f:"F = kx",d:"Linear spring approximation",c:"Materials"},
+  {n:"Stress",f:"σ = F/A",d:"Normal stress",c:"Materials"}
+];
+
+const constPanel=document.getElementById("constPanel"), eqnPanel=document.getElementById("eqnPanel");
+const constModeBtn=document.getElementById("constModeBtn"), eqnModeBtn=document.getElementById("eqnModeBtn");
+const constSearch=document.getElementById("constSearch"), eqnSearch=document.getElementById("eqnSearch");
+const constCategories=document.getElementById("constCategories"), eqnCategories=document.getElementById("eqnCategories");
+const constList=document.getElementById("constList"), eqnList=document.getElementById("eqnList");
+let constCategory="All", eqnCategory="All";
+function showRef(which){
+  gridEl.classList.add("hidden"); sciRows.classList.add("hidden"); convPanel.classList.add("hidden"); constPanel.classList.toggle("hidden",which!=="const"); eqnPanel.classList.toggle("hidden",which!=="eqn");
+  [stdModeBtn,sciModeBtn,convModeBtn,constModeBtn,eqnModeBtn].forEach(b=>b.classList.remove("active"));
+  (which==="const"?constModeBtn:eqnModeBtn).classList.add("active");
+}
+function renderRefCategories(el,data,active,setActive,render){
+  el.innerHTML=""; ["All",...new Set(data.map(x=>x.c))].forEach(cat=>{const b=document.createElement("button");b.className="ref-chip"+(cat===active?" active":"");b.textContent=cat;b.onclick=()=>{setActive(cat);render();renderRefCategories(el,data,cat,setActive,render)};el.appendChild(b);});
+}
+function renderConstants(){
+  const q=constSearch.value.trim().toLowerCase(); const rows=CONSTANTS.filter(x=>(constCategory==="All"||x.c===constCategory)&&(!q||(x.n+" "+x.v+" "+x.d+" "+x.c).toLowerCase().includes(q)));
+  constList.innerHTML=rows.length?rows.map(x=>`<div class="ref-card"><div class="ref-title">${x.n}</div><div class="ref-value">${x.v}</div><div class="ref-meta">${x.d} · ${x.c}</div></div>`).join(""):`<div class="history-empty">No matching constants</div>`;
+}
+function renderEquations(){
+  const q=eqnSearch.value.trim().toLowerCase(); const rows=EQUATIONS.filter(x=>(eqnCategory==="All"||x.c===eqnCategory)&&(!q||(x.n+" "+x.f+" "+x.d+" "+x.c).toLowerCase().includes(q)));
+  eqnList.innerHTML=rows.length?rows.map(x=>`<div class="ref-card"><div class="ref-title">${x.n}</div><div class="ref-value">${x.f}</div><div class="ref-meta">${x.d} · ${x.c}</div></div>`).join(""):`<div class="history-empty">No matching equations</div>`;
+}
+constModeBtn.onclick=()=>{showRef("const");renderConstants();};
+eqnModeBtn.onclick=()=>{showRef("eqn");renderEquations();};
+constSearch.oninput=renderConstants; eqnSearch.oninput=renderEquations;
+renderRefCategories(constCategories,CONSTANTS,constCategory,v=>constCategory=v,renderConstants);
+renderRefCategories(eqnCategories,EQUATIONS,eqnCategory,v=>eqnCategory=v,renderEquations);
+renderConstants(); renderEquations();
+
+if ("serviceWorker" in navigator){
+  window.addEventListener("load", ()=>{
+    navigator.serviceWorker.register("service-worker.js").catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
