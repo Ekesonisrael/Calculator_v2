@@ -1,4 +1,4 @@
-const CACHE_NAME = "fx-calc-v2";
+const CACHE_NAME = "CalVoice-v2";
 const ASSETS = [
   "./",
   "./index.html",
