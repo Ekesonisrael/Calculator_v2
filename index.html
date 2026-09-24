@@ -1711,7 +1711,7 @@ function parseSpokenMath(text){
        .replace(/\bdivided by\b|\bdivide by\b|\bover\b/g, " / ")
        .replace(/\bto the power of\b|\braise(d)? to (the )?power( of)?\b|\bpower of\b/g, " ^ ")
        .replace(/\bpoint\b/g, " . ")
-       .replace(/\b(percent|precentage|per cent|pre cent|pasent|quacent|send case|zecent|cacent|send)\b/g, " /100 ")
+       .replace(/\b(percent|percentage|per cent|pre cent|pasent|quacent|send case|zecent|cacent|send)\b/g, " /100 ")
        .replace(/\bpi\b/g, " \u03c0 ")
        // These now match WITH or WITHOUT "of" — "log 50" and "log of 50"
        // both work, since real speech often drops the "of".
@@ -1721,7 +1721,9 @@ function parseSpokenMath(text){
        .replace(/\btan(gent)?(\s+of)?\b/g, " tan( ")
        .replace(/\bln(\s+of)?\b/g, " ln( ")
        .replace(/\blog(\s+of)?\b/g, " log( ")
-       .replace(/\bequals\b|\bequal\b|\bwhat is\b|\bwhat's\b/g, " ");
+       .replace(/\bequals\b|\bequal\b|\bwhat is\b|\bwhat's\b/g, " ")
+       .replace(/(\d+(\.\d+)?)\s*\/100\s*(of|\*times)?(\d+(\.d+)?)/g, "($1/100)*$4");
+  
 
   // Combine compound number words ("eighty one" -> 81, "one hundred" -> 100,
   // "one million" -> 1000000) properly, instead of converting each word
