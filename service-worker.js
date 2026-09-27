@@ -1,10 +1,10 @@
-// CalXest Service Worker — Stale-While-Revalidate strategy
+// CalXvoice Service Worker — Stale-While-Revalidate strategy
 // Serves cached assets immediately for instant startup, then
 // updates the cache in the background so the next launch is fresh.
 // Currency API calls are explicitly excluded from caching since
 // stale exchange rates would silently produce wrong answers.
 
-const CACHE_NAME = "calxest-v3";
+const CACHE_NAME = "calvoice-v3";
 const PRECACHE = [
   "./",
   "./index.html",
