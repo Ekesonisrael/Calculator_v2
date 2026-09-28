@@ -729,15 +729,6 @@ class MathEngine{
         i++;
         continue;
       }
-      // % is valid calculator syntax — treat it as ÷100 at the token level
-      // so "25%" becomes 0.25 and contextual handlePercent() still handles
-      // the more complex "200+10% = 220" case at expression level.
-      if (ch === "%"){
-        tokens.push({ t:"OP", v: "/" });
-        tokens.push({ t:"NUM", v: 100 });
-        i++;
-        continue;
-      }
       throw new Error("Unexpected character: " + ch);
     }
     return tokens;
@@ -1148,7 +1139,7 @@ function convertValue(value, category, fromUnit, toUnit){
 }
 
 function runConversion(){
-  const raw = convFromInput.value.trim();
+  const raw = convFromInput.value.replace(/,/g, "").trim(); // strip visual commas before math
   const cat = CONV_CATEGORIES[convCategory];
 
   if (cat.special === "currency"){
@@ -1186,7 +1177,20 @@ function runConversion(){
   }
 }
 
-convFromInput.addEventListener("input", runConversion);
+convFromInput.addEventListener("input", ()=>{
+  // Strip existing commas to get the raw number, then re-add commas visually
+  // while keeping the cursor usable. The raw value is read back by runConversion.
+  const raw = convFromInput.value.replace(/,/g, "");
+  if (raw === "" || isNaN(Number(raw))) { runConversion(); return; }
+  const parts = raw.split(".");
+  parts[0] = Number(parts[0]).toLocaleString("en-US");
+  const formatted = parts.join(".");
+  const cursorFromEnd = convFromInput.value.length - convFromInput.selectionEnd;
+  convFromInput.value = formatted;
+  const newPos = formatted.length - cursorFromEnd;
+  convFromInput.setSelectionRange(newPos, newPos);
+  runConversion();
+});
 convFromUnitEl.addEventListener("change", ()=>{ convFromUnit = convFromUnitEl.value; runConversion(); });
 convToUnitEl.addEventListener("change", ()=>{ convToUnit = convToUnitEl.value; runConversion(); });
 convSwapBtn.addEventListener("click", ()=>{
@@ -1538,7 +1542,18 @@ function handleVoiceCommand(text){
     toast("Dark mode");
     return true;
   }
-  if (/\b(scientific mode|switch to scientific|switch to science|engineering mode|switch to engineering)\b/.test(t)){
+  // Fuzzy mode switching — covers mispronunciations and partial matches
+  // e.g. "switch to question" matches "equation", "switch to constant" matches "const"
+  if (/\b(conv|conversion|converter|switch to conv)/.test(t)){
+    convModeBtn.click(); toast("Conversion mode"); return true;
+  }
+  if (/\b(const|constants|constant mode|switch to const)/.test(t)){
+    constModeBtn.click(); toast("Constants mode"); return true;
+  }
+  if (/\b(eqn|equation|equations|equation mode|question mode|switch to equation|switch to question|switch to eqn)/.test(t)){
+    eqnModeBtn.click(); toast("Equations mode"); return true;
+  }
+  if (/\b(scientific mode|switch to scientific|switch to science|engineering mode|switch to engineering|sci mode|switch to sci)\b/.test(t)){
     sciModeBtn.click();
     toast("Scientific mode");
     return true;
@@ -1720,9 +1735,8 @@ function parseSpokenMath(text){
        .replace(/\bdivided by\b|\bdivide by\b|\bover\b/g, " / ")
        .replace(/\bto the power of\b|\braise(d)? to (the )?power( of)?\b|\bpower of\b/g, " ^ ")
        .replace(/\bpoint\b/g, " . ")
-       // "X percent of Y" -> "(X/100)*Y" — must run BEFORE the generic /100 sub
-       // so the "of Y" part isn't left as a literal word.
-       .replace(/(\d+(?:\.\d+)?)\s*(?:percent|percentage|per cent|pre cent|pasent|quacent|send case|zecent|cacent|send)\s+of\s+(\d+(?:\.\d+)?)/gi, "($1/100)*$2")
+       // "X percent of Y" -> "(X/100)*Y" — MUST run before generic percent->"/100"
+       .replace(/(\d+(?:\.\d+)?)\s*(?:percent|percentage|per cent|pre cent|pasent|quacent|zecent|cacent|send)\s+of\s+(\d+(?:\.\d+)?)/gi, "($1/100)*$2")
        .replace(/\b(percent|percentage|per cent|pre cent|pasent|quacent|send case|zecent|cacent|send)\b/gi, " /100 ")
        .replace(/\bpi\b/g, " \u03c0 ")
        // These now match WITH or WITHOUT "of" — "log 50" and "log of 50"
@@ -1879,9 +1893,9 @@ renderRefCategories(eqnCategories,EQUATIONS,eqnCategory,v=>eqnCategory=v,renderE
 renderConstants(); renderEquations();
 
 if ("serviceWorker" in navigator){
-  // Register immediately (not on "load") so the SW can claim the page
-  // before any currency fetch fires — keeps startup rendering unblocked.
-  navigator.serviceWorker.register("service-worker.js").catch(()=>{});
+  window.addEventListener("load", ()=>{
+    navigator.serviceWorker.register("service-worker.js").catch(()=>{});
+  });
 }
 </script>
 </body>
